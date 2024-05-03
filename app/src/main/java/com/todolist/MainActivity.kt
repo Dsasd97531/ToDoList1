@@ -11,13 +11,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -32,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.todolist.ui.theme.ToDoListTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,8 +55,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-//                    EditTextComponent("","",context = this)
-//                    DatePickerComponent()
                     ToDoList()
 
                 }
@@ -58,43 +63,77 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun ToDoList() {
     val context = LocalContext.current
-    var tasks = remember { mutableStateListOf<Triple<String, String, String>>() }
-    var showDialog = remember { mutableStateOf(false) }
-    var newTaskTitle = remember { mutableStateOf("") }
-    var newTaskDescription = remember { mutableStateOf("") }
-    var newTaskDate = remember { mutableStateOf("") }
+    var tasks = remember { mutableStateListOf<Task>() }
+    val scrollState = rememberScrollState()
+    var showAddDialog = remember { mutableStateOf(false) }
+    var showSortDialog = remember { mutableStateOf(false) }
+    var sortOption = remember { mutableStateOf("Priority") }
+    var sortAscending = remember { mutableStateOf(true) }
 
-    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(sortOption.value, sortAscending.value) {
+        if (sortAscending.value) {
+            when (sortOption.value) {
+                "Priority" -> tasks.sortBy { priorityToFloat(it.priority) }
+                "Date" -> tasks.sortBy { it.date }
+            }
+        } else {
+            when (sortOption.value) {
+                "Priority" -> tasks.sortByDescending { priorityToFloat(it.priority) }
+                "Date" -> tasks.sortByDescending { it.date }
+            }
+        }
+    }
 
-    // Load tasks from SharedPreferences at startup
     LaunchedEffect(Unit) {
-        tasks.clear()
         tasks.addAll(loadTasksFromPreferences(context))
     }
 
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        tasks.forEach { (title, description, date) ->
-            BoxWithTextAndButton(title, description, date)
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            Button(onClick = { showSortDialog.value = true }) {
+                Text("Sort Tasks")
+            }
+        },
+        bottomBar = {
+            Button(onClick = { showAddDialog.value = true }) {
+                Text("Add Task")
+            }
         }
-
-        Button(onClick = { showDialog.value = true }) {
-            Text("Add Task")
-        }
-
-        if (showDialog.value) {
-            TaskDialog(
-                newTaskTitle,
-                newTaskDescription,
-                newTaskDate,
-                tasks,
-                context,
-                coroutineScope,
-                showDialog
-            )
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(scrollState)
+        ) {
+            tasks.forEach { task ->
+                BoxWithTextAndButton(task, tasks, context, rememberCoroutineScope())
+            }
+            if (showAddDialog.value) {
+                TaskDialog(
+                    newTaskTitle = remember { mutableStateOf("") },
+                    newTaskDescription = remember { mutableStateOf("") },
+                    newTaskDate = remember { mutableStateOf("") },
+                    newTaskTags = remember { mutableStateOf("") },
+                    newTaskPriority = remember { mutableStateOf("Low") },
+                    tasks = tasks,
+                    context = context,
+                    coroutineScope = rememberCoroutineScope(),
+                    showDialog = showAddDialog
+                )
+            }
+            if (showSortDialog.value) {
+                SortDialog(
+                    showDialog = showSortDialog,
+                    sortOption = sortOption,
+                    sortAscending = sortAscending
+                )
+            }
         }
     }
 }
@@ -104,7 +143,9 @@ fun TaskDialog(
     newTaskTitle: MutableState<String>,
     newTaskDescription: MutableState<String>,
     newTaskDate: MutableState<String>,
-    tasks: MutableList<Triple<String, String, String>>,
+    newTaskTags: MutableState<String>,
+    newTaskPriority: MutableState<String>,
+    tasks: MutableList<Task>,
     context: Context,
     coroutineScope: CoroutineScope,
     showDialog: MutableState<Boolean>
@@ -129,7 +170,20 @@ fun TaskDialog(
                     Text("Select Date")
                 }
 
-                Text("Selected Date: ${newTaskDate.value}")
+                TextField(
+                    value = newTaskTags.value,
+                    onValueChange = { newTaskTags.value = it },
+                    label = { Text("Tags (comma-separated)") }
+                )
+
+                Slider(
+                    value = priorityToFloat(newTaskPriority.value),
+                    onValueChange = { value -> newTaskPriority.value = floatToPriority(value) },
+                    valueRange = 0f..4f,
+                    steps = 4,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text("Priority: ${newTaskPriority.value}")
             }
         },
         confirmButton = {
@@ -137,16 +191,23 @@ fun TaskDialog(
                 if (newTaskTitle.value.isNotEmpty() &&
                     newTaskDescription.value.isNotEmpty() &&
                     newTaskDate.value.isNotEmpty()) {
-                    val newTask = Triple(newTaskTitle.value, newTaskDescription.value, newTaskDate.value)
+                    val newTask = Task(
+                        title = newTaskTitle.value,
+                        description = newTaskDescription.value,
+                        date = newTaskDate.value,
+                        tags = newTaskTags.value.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+                        priority = newTaskPriority.value
+                    )
 
                     coroutineScope.launch(Dispatchers.IO) {
                         tasks.add(newTask)
                         saveTasksToPreferences(context, tasks)
                     }
-
                     newTaskTitle.value = ""
                     newTaskDescription.value = ""
                     newTaskDate.value = ""
+                    newTaskTags.value = ""
+                    newTaskPriority.value = "Low"
                     showDialog.value = false
                 }
             }) {
@@ -155,6 +216,26 @@ fun TaskDialog(
         }
     )
 }
+
+fun priorityToFloat(priority: String): Float {
+    return when (priority) {
+        "Medium" -> 1f
+        "Important" -> 2f
+        "Very Important" -> 3f
+        "Urgent" -> 4f
+        else -> 0f // Default to "Low"
+    }
+}
+fun floatToPriority(value: Float): String {
+    return when (value.toInt()) {
+        1 -> "Medium"
+        2 -> "Important"
+        3 -> "Very Important"
+        4 -> "Urgent"
+        else -> "Low"
+    }
+}
+
 fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
     val calendar = Calendar.getInstance()
     val year = calendar.get(Calendar.YEAR)
@@ -171,21 +252,43 @@ fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
     datePickerDialog.show()
 }
 
+
 @Composable
-fun BoxWithTextAndButton(text1: String, text2: String, date: String) {
+fun BoxWithTextAndButton(task: Task, tasks: MutableList<Task>, context: Context, coroutineScope: CoroutineScope) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(8.dp).height(80.dp),
-        contentAlignment = Alignment.CenterStart
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
-                Text("Title: $text1")
-                Text("Description: $text2")
-                Text("Date: $date")
+                Text("Title: ${task.title}")
+                Text("Description: ${task.description}")
+                Text("Date of the end: ${task.date}")
+                Text("Tags: ${task.tags.joinToString(", ")}")
+                Text("Priority: ${task.priority}")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { /* Здесь будет функциональность редактирования */ }) {
+                Text("Edit")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                coroutineScope.launch {
+                    tasks.remove(task)
+                    saveTasksToPreferences(context, tasks) // Убедитесь, что у вас есть функция сохранения изменений
+                }
+            }) {
+                Text("Delete")
             }
         }
     }
@@ -194,21 +297,90 @@ fun getSharedPreferences(context: Context): SharedPreferences {
     return context.getSharedPreferences("ToDoPrefs", Context.MODE_PRIVATE)
 }
 
-fun saveTasksToPreferences(context: Context, tasks: List<Triple<String, String, String>>) {
+fun saveTasksToPreferences(context: Context, tasks: List<Task>) {
     val prefs = getSharedPreferences(context)
     val editor = prefs.edit()
 
-    val tasksAsStrings = tasks.map { "${it.first}|${it.second}|${it.third}" }
+    val tasksAsStrings = tasks.map { "${it.id}|${it.title}|${it.description}|${it.date}|${it.tags.joinToString(",")}|${it.priority}" }
     editor.putStringSet("tasks", tasksAsStrings.toSet())
     editor.apply()
 }
 
-fun loadTasksFromPreferences(context: Context): List<Triple<String, String, String>> {
+fun loadTasksFromPreferences(context: Context): List<Task> {
     val prefs = getSharedPreferences(context)
     val taskSet = prefs.getStringSet("tasks", emptySet())
 
     return taskSet?.map {
         val parts = it.split("|")
-        Triple(parts[0], parts[1], parts[2])
+        val id = parts[0].toInt()
+        val tags = parts[4].split(",").filter { tag -> tag.isNotEmpty() }
+        Task(
+            id = id,
+            title = parts[1],
+            description = parts[2],
+            date = parts[3],
+            tags = tags,
+            priority = parts[5]
+        )
     } ?: emptyList()
+}
+
+@Entity(tableName = "tasks")
+data class Task(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val title: String,
+    val description: String,
+    val date: String,
+    val tags: List<String>,
+    val priority: String
+)
+
+@Composable
+fun SortDialog(
+    showDialog: MutableState<Boolean>,
+    sortOption: MutableState<String>,
+    sortAscending: MutableState<Boolean>
+) {
+    val options = listOf("Priority", "Date") // Оставляем только необходимые опции
+    AlertDialog(
+        onDismissRequest = { showDialog.value = false },
+        title = { Text("Sort Tasks") },
+        text = {
+            Column {
+                options.forEach { option ->
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Button(
+                            onClick = {
+                                sortOption.value = option
+                                sortAscending.value = true
+                                showDialog.value = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("$option Ascending")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                sortOption.value = option
+                                sortAscending.value = false
+                                showDialog.value = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("$option Descending")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { showDialog.value = false }) {
+                Text("Close")
+            }
+        }
+    )
 }

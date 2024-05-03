@@ -37,14 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import com.todolist.model.Task
 import com.todolist.ui.theme.ToDoListTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Calendar
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,7 +54,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     ToDoList()
-
                 }
             }
         }
@@ -324,16 +321,6 @@ fun loadTasksFromPreferences(context: Context): List<Task> {
         )
     } ?: emptyList()
 }
-
-@Entity(tableName = "tasks")
-data class Task(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val title: String,
-    val description: String,
-    val date: String,
-    val tags: List<String>,
-    val priority: String
-)
 
 @Composable
 fun SortDialog(

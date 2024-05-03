@@ -1,4 +1,4 @@
-package com.todolist
+package com.todolist.ui
 
 import android.app.DatePickerDialog
 import android.content.Context
@@ -223,7 +223,7 @@ fun priorityToFloat(priority: String): Float {
         "Important" -> 2f
         "Very Important" -> 3f
         "Urgent" -> 4f
-        else -> 0f // Default to "Low"
+        else -> 0f
     }
 }
 fun floatToPriority(value: Float): String {

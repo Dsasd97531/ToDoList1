@@ -20,7 +20,7 @@ fun SortDialog(
     sortOption: MutableState<String>,
     sortAscending: MutableState<Boolean>
 ) {
-    val options = listOf("Priority", "Date") // Оставляем только необходимые опции
+    val options = listOf("Priority", "Date")
     AlertDialog(
         onDismissRequest = { showDialog.value = false },
         title = { Text("Sort Tasks") },
@@ -36,8 +36,7 @@ fun SortDialog(
                                 sortOption.value = option
                                 sortAscending.value = true
                                 showDialog.value = false
-                            },
-                            modifier = Modifier.weight(1f)
+                            }
                         ) {
                             Text("$option Ascending")
                         }
@@ -47,8 +46,7 @@ fun SortDialog(
                                 sortOption.value = option
                                 sortAscending.value = false
                                 showDialog.value = false
-                            },
-                            modifier = Modifier.weight(1f)
+                            }
                         ) {
                             Text("$option Descending")
                         }

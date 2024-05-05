@@ -12,13 +12,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import com.todolist.data.TaskRepository
 import com.todolist.model.Task
-import com.todolist.ui.floatToPriority
-import com.todolist.ui.priorityToFloat
-import com.todolist.ui.saveTasksToPreferences
+import com.todolist.util.floatToPriority
+import com.todolist.util.priorityToFloat
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -30,9 +31,10 @@ fun TaskDialog(
     newTaskTags: MutableState<String>,
     newTaskPriority: MutableState<String>,
     tasks: MutableList<Task>,
-    context: Context,
-    coroutineScope: CoroutineScope,
-    showDialog: MutableState<Boolean>
+    showDialog: MutableState<Boolean>,
+    context: Context = LocalContext.current,  // LocalContext.current gives you the context within Composable functions
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+    taskRepository: TaskRepository // только один источник управления данными
 ) {
     AlertDialog(
         onDismissRequest = { showDialog.value = false },
@@ -72,9 +74,7 @@ fun TaskDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (newTaskTitle.value.isNotEmpty() &&
-                    newTaskDescription.value.isNotEmpty() &&
-                    newTaskDate.value.isNotEmpty()) {
+                if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value.isNotEmpty()) {
                     val newTask = Task(
                         title = newTaskTitle.value,
                         description = newTaskDescription.value,
@@ -83,16 +83,17 @@ fun TaskDialog(
                         priority = newTaskPriority.value
                     )
 
-                    coroutineScope.launch(Dispatchers.IO) {
+                    coroutineScope.launch {
                         tasks.add(newTask)
-                        saveTasksToPreferences(context, tasks)
+                        taskRepository.saveTasks(tasks) // Обновление задач через репозиторий
+                        // Очистка состояний и закрытие диалога
+                        newTaskTitle.value = ""
+                        newTaskDescription.value = ""
+                        newTaskDate.value = ""
+                        newTaskTags.value = ""
+                        newTaskPriority.value = "Low"
+                        showDialog.value = false
                     }
-                    newTaskTitle.value = ""
-                    newTaskDescription.value = ""
-                    newTaskDate.value = ""
-                    newTaskTags.value = ""
-                    newTaskPriority.value = "Low"
-                    showDialog.value = false
                 }
             }) {
                 Text("OK")

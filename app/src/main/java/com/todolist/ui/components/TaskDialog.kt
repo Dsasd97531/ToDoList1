@@ -32,7 +32,7 @@ fun TaskDialog(
     newTaskDate: MutableState<String>,
     newTaskTags: MutableState<String>,
     newTaskPriority: MutableState<String>,
-    tasks: SnapshotStateList<Task>,
+    allTasks: SnapshotStateList<Task>,
     showDialog: MutableState<Boolean>,
     context: Context = LocalContext.current,  // LocalContext.current gives you the context within Composable functions
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
@@ -76,29 +76,24 @@ fun TaskDialog(
         },
         confirmButton = {
             Button(onClick = {
-            if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value.isNotEmpty()) {
-                val newTask = Task(
-                    title = newTaskTitle.value,
-                    description = newTaskDescription.value,
-                    date = newTaskDate.value,
-                    tags = newTaskTags.value.split(",").map { it.trim() }.filter { it.isNotEmpty() },
-                    priority = newTaskPriority.value
-                )
-                tasks.add(newTask)  // Add immediately to update UI
-                Log.d("TaskDialog", "Task added: ${newTask.title}")
-                coroutineScope.launch {
-                    taskRepository.saveTasks(tasks) // Save asynchronously
-                    Log.d("TaskDialog", "Tasks saved")
+                if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value.isNotEmpty()) {
+                    val newTask = Task(
+                        title = newTaskTitle.value,
+                        description = newTaskDescription.value,
+                        date = newTaskDate.value,
+                        tags = newTaskTags.value.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+                        priority = newTaskPriority.value
+                    )
+                    allTasks.add(newTask)
+                    taskRepository.saveTasks(allTasks)
+                    newTaskTitle.value = ""
+                    newTaskDescription.value = ""
+                    newTaskDate.value = ""
+                    newTaskTags.value = ""
+                    newTaskPriority.value = "Low"
+                    showDialog.value = false
                 }
-                // Clear states and close dialog
-                newTaskTitle.value = ""
-                newTaskDescription.value = ""
-                newTaskDate.value = ""
-                newTaskTags.value = ""
-                newTaskPriority.value = "Low"
-                showDialog.value = false
-            }
-        }) {
+            }) {
                 Text("OK")
             }
         }

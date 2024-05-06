@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
@@ -33,6 +34,7 @@ import com.todolist.ui.components.TaskDialog
 import com.todolist.ui.theme.ToDoListTheme
 import kotlinx.coroutines.launch
 import com.todolist.data.TaskRepository
+import com.todolist.ui.components.SearchBar
 import com.todolist.util.priorityToFloat
 import kotlinx.coroutines.MainScope
 
@@ -55,38 +57,82 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ToDoList() {
-        val tasks = remember { mutableStateListOf<Task>() }
+        val allTasks = remember { mutableStateListOf<Task>() } // Основной список задач
+        val displayedTasks = remember { mutableStateListOf<Task>() }
         val scrollState = rememberScrollState()
         val showAddDialog = remember { mutableStateOf(false) }
         val showSortDialog = remember { mutableStateOf(false) }
+        val showSearchDialog = remember { mutableStateOf(false) }
         val sortOption = remember { mutableStateOf("Priority") }
         val sortAscending = remember { mutableStateOf(true) }
+        val isSearching = remember { mutableStateOf(false) }
+        val searchQuery = remember { mutableStateOf("") }
 
         // Load tasks initially
-        LaunchedEffect(Unit) {
-            tasks.addAll(taskRepository.loadTasks())
+        LaunchedEffect(true) {
+            allTasks.addAll(taskRepository.loadTasks())
+            displayedTasks.addAll(allTasks) // По умолчанию отображаем все задачи
         }
-
         // Respond to sorting changes
         LaunchedEffect(sortOption.value, sortAscending.value) {
             if (sortAscending.value) {
                 when (sortOption.value) {
-                    "Priority" -> tasks.sortBy { priorityToFloat(it.priority) }
-                    "Date" -> tasks.sortBy { it.date }
+                    "Priority" -> allTasks.sortBy { priorityToFloat(it.priority) }
+                    "Date" -> allTasks.sortBy { it.date }
                 }
             } else {
                 when (sortOption.value) {
-                    "Priority" -> tasks.sortByDescending { priorityToFloat(it.priority) }
-                    "Date" -> tasks.sortByDescending { it.date }
+                    "Priority" -> allTasks.sortByDescending { priorityToFloat(it.priority) }
+                    "Date" -> allTasks.sortByDescending { it.date }
                 }
+            }
+            if (!isSearching.value) {
+                displayedTasks.clear()
+                displayedTasks.addAll(allTasks)
+            }
+        }
+
+        LaunchedEffect(searchQuery.value) {
+            if (searchQuery.value.isEmpty()) {
+                displayedTasks.clear()
+                displayedTasks.addAll(allTasks) // Если строка поиска пуста, показываем все задачи
+            } else {
+                val results = allTasks.filter {
+                    it.title.contains(searchQuery.value, ignoreCase = true) ||
+                            it.description.contains(searchQuery.value, ignoreCase = true) ||
+                            it.date.contains(searchQuery.value) ||
+                            it.tags.joinToString().contains(searchQuery.value, ignoreCase = true)
+                }
+                displayedTasks.clear()
+                displayedTasks.addAll(results)
+            }
+        }
+
+        LaunchedEffect(allTasks.size) {
+            if (!isSearching.value) {
+                displayedTasks.clear()
+                displayedTasks.addAll(allTasks)
             }
         }
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+
             topBar = {
-                Button(onClick = { showSortDialog.value = true }) {
-                    Text("Sort Tasks")
+                Row {  // Горизонтальное размещение кнопок
+                    Button(onClick = { showSortDialog.value = true }) {
+                        Text("Sort Tasks")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        showSearchDialog.value = !showSearchDialog.value
+                        if (!showSearchDialog.value) {
+                            searchQuery.value = "" // Очищаем поиск при закрытии
+                            isSearching.value = false
+                        }
+                    }) {
+                        Text(if (showSearchDialog.value) "Close Search" else "Search Tasks")
+                    }
                 }
             },
             bottomBar = {
@@ -102,8 +148,19 @@ class MainActivity : ComponentActivity() {
                     .padding(16.dp)
                     .verticalScroll(scrollState)
             ) {
-                tasks.forEach { task ->
-                    TaskItem(task, tasks)
+                if (showSearchDialog.value) {
+                    TextField(
+                        value = searchQuery.value,
+                        onValueChange = { newText ->
+                            searchQuery.value = newText
+                            isSearching.value = newText.isNotEmpty()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Type to search tasks...") }
+                    )
+                }
+                displayedTasks.forEach { task ->
+                    TaskItem(task, allTasks)
                 }
                 if (showAddDialog.value) {
                     TaskDialog(
@@ -112,7 +169,7 @@ class MainActivity : ComponentActivity() {
                         newTaskDate = remember { mutableStateOf("") },
                         newTaskTags = remember { mutableStateOf("") },
                         newTaskPriority = remember { mutableStateOf("Low") },
-                        tasks = tasks,
+                        allTasks = allTasks,
                         taskRepository = taskRepository,
                         showDialog = showAddDialog
                     )

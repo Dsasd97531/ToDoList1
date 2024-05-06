@@ -34,6 +34,7 @@ import com.todolist.ui.components.TaskDialog
 import com.todolist.ui.theme.ToDoListTheme
 import kotlinx.coroutines.launch
 import com.todolist.data.TaskRepository
+import com.todolist.ui.components.TaskTabs
 import com.todolist.ui.components.TaskTag
 import com.todolist.util.priorityToFloat
 import kotlinx.coroutines.MainScope
@@ -67,6 +68,8 @@ class MainActivity : ComponentActivity() {
         val sortAscending = remember { mutableStateOf(true) }
         val isSearching = remember { mutableStateOf(false) }
         val searchQuery = remember { mutableStateOf("") }
+        val selectedTab = remember { mutableStateOf(TaskTag.Work) }
+
 
         // Load tasks initially
         LaunchedEffect(true) {
@@ -119,20 +122,27 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier.fillMaxSize(),
 
             topBar = {
-                Row {  // Горизонтальное размещение кнопок
-                    Button(onClick = { showSortDialog.value = true }) {
-                        Text("Sort Tasks")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        showSearchDialog.value = !showSearchDialog.value
-                        if (!showSearchDialog.value) {
-                            searchQuery.value = "" // Очищаем поиск при закрытии
-                            isSearching.value = false
+                Column {  // Используем Column для вертикального стекинга элементов
+                    Row {  // Горизонтальное размещение кнопок
+                        Button(onClick = { showSortDialog.value = true }) {
+                            Text("Sort Tasks")
                         }
-                    }) {
-                        Text(if (showSearchDialog.value) "Close Search" else "Search Tasks")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = {
+                            showSearchDialog.value = !showSearchDialog.value
+                            if (!showSearchDialog.value) {
+                                searchQuery.value = "" // Очищаем поиск при закрытии
+                                isSearching.value = false
+                            }
+                        }) {
+                            Text(if (showSearchDialog.value) "Close Search" else "Search Tasks")
+                        }
                     }
+                    TaskTabs(
+                        selectedTab = selectedTab.value,
+                        onTabSelected = { selectedTab.value = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             },
             bottomBar = {

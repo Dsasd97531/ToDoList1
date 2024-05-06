@@ -34,6 +34,7 @@ import com.todolist.ui.components.TaskDialog
 import com.todolist.ui.theme.ToDoListTheme
 import kotlinx.coroutines.launch
 import com.todolist.data.TaskRepository
+import com.todolist.ui.components.TaskTag
 import com.todolist.util.priorityToFloat
 import kotlinx.coroutines.MainScope
 
@@ -166,7 +167,7 @@ class MainActivity : ComponentActivity() {
                         newTaskTitle = remember { mutableStateOf("") },
                         newTaskDescription = remember { mutableStateOf("") },
                         newTaskDate = remember { mutableStateOf("") },
-                        newTaskTags = remember { mutableStateOf("") },
+                        newTaskTags = remember { mutableStateOf(TaskTag.Work) },
                         newTaskPriority = remember { mutableStateOf("Low") },
                         allTasks = allTasks,
                         taskRepository = taskRepository,

@@ -2,6 +2,7 @@ package com.todolist.ui.components
 
 import android.app.DatePickerDialog
 import android.content.Context
+import android.util.Log
 import android.widget.DatePicker
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.todolist.data.TaskRepository
@@ -30,7 +32,7 @@ fun TaskDialog(
     newTaskDate: MutableState<String>,
     newTaskTags: MutableState<String>,
     newTaskPriority: MutableState<String>,
-    tasks: MutableList<Task>,
+    tasks: SnapshotStateList<Task>,
     showDialog: MutableState<Boolean>,
     context: Context = LocalContext.current,  // LocalContext.current gives you the context within Composable functions
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
@@ -74,28 +76,29 @@ fun TaskDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value.isNotEmpty()) {
-                    val newTask = Task(
-                        title = newTaskTitle.value,
-                        description = newTaskDescription.value,
-                        date = newTaskDate.value,
-                        tags = newTaskTags.value.split(",").map { it.trim() }.filter { it.isNotEmpty() },
-                        priority = newTaskPriority.value
-                    )
-
-                    coroutineScope.launch {
-                        tasks.add(newTask)
-                        taskRepository.saveTasks(tasks) // Обновление задач через репозиторий
-                        // Очистка состояний и закрытие диалога
-                        newTaskTitle.value = ""
-                        newTaskDescription.value = ""
-                        newTaskDate.value = ""
-                        newTaskTags.value = ""
-                        newTaskPriority.value = "Low"
-                        showDialog.value = false
-                    }
+            if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value.isNotEmpty()) {
+                val newTask = Task(
+                    title = newTaskTitle.value,
+                    description = newTaskDescription.value,
+                    date = newTaskDate.value,
+                    tags = newTaskTags.value.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+                    priority = newTaskPriority.value
+                )
+                tasks.add(newTask)  // Add immediately to update UI
+                Log.d("TaskDialog", "Task added: ${newTask.title}")
+                coroutineScope.launch {
+                    taskRepository.saveTasks(tasks) // Save asynchronously
+                    Log.d("TaskDialog", "Tasks saved")
                 }
-            }) {
+                // Clear states and close dialog
+                newTaskTitle.value = ""
+                newTaskDescription.value = ""
+                newTaskDate.value = ""
+                newTaskTags.value = ""
+                newTaskPriority.value = "Low"
+                showDialog.value = false
+            }
+        }) {
                 Text("OK")
             }
         }

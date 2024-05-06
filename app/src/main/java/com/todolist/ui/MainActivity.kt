@@ -34,7 +34,6 @@ import com.todolist.ui.components.TaskDialog
 import com.todolist.ui.theme.ToDoListTheme
 import kotlinx.coroutines.launch
 import com.todolist.data.TaskRepository
-import com.todolist.ui.components.SearchBar
 import com.todolist.util.priorityToFloat
 import kotlinx.coroutines.MainScope
 

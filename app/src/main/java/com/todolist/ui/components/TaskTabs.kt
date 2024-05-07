@@ -7,11 +7,11 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun TaskTabs(
-    selectedTab: TaskTag,
-    onTabSelected: (TaskTag) -> Unit,
+    selectedTab: String,
+    onTabSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tabs = TaskTag.values()
+    val tabs = listOf("All") + TaskTag.values().map { it.displayName }
     TabRow(
         selectedTabIndex = tabs.indexOf(selectedTab),
         modifier = modifier
@@ -20,7 +20,7 @@ fun TaskTabs(
             Tab(
                 selected = tab == selectedTab,
                 onClick = { onTabSelected(tab) },
-                text = { Text(tab.displayName) }
+                text = { Text(tab) }
             )
         }
     }

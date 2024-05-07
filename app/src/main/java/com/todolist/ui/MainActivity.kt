@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
         val sortAscending = remember { mutableStateOf(true) }
         val isSearching = remember { mutableStateOf(false) }
         val searchQuery = remember { mutableStateOf("") }
-        val selectedTab = remember { mutableStateOf(TaskTag.Work) }
+        val selectedTab = remember { mutableStateOf("All") }
 
 
         // Load tasks initially
@@ -115,6 +115,17 @@ class MainActivity : ComponentActivity() {
             if (!isSearching.value) {
                 displayedTasks.clear()
                 displayedTasks.addAll(allTasks)
+            }
+        }
+
+        LaunchedEffect(selectedTab.value) {
+            displayedTasks.clear()
+            if (selectedTab.value == "All") {
+                displayedTasks.addAll(allTasks)
+            } else {
+                displayedTasks.addAll(allTasks.filter { task ->
+                    task.tags.contains(selectedTab.value)  // Предполагается, что tags содержит displayName
+                })
             }
         }
 

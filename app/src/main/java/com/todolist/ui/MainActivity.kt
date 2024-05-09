@@ -1,14 +1,13 @@
 package com.todolist.ui
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -47,6 +46,7 @@ class MainActivity : ComponentActivity() {
         val displayedTasks = remember { mutableStateListOf<Task>() }
         val scrollState = rememberScrollState()
         val showAddDialog = remember { mutableStateOf(false) }
+        val editDialogStates = remember { mutableStateMapOf<Task, MutableState<Boolean>>() }
         val showSortDialog = remember { mutableStateOf(false) }
         val showSearchDialog = remember { mutableStateOf(false) }
         val searchQuery = remember { mutableStateOf("") }
@@ -126,7 +126,9 @@ class MainActivity : ComponentActivity() {
                         SearchDialog(
                             searchQuery = searchQuery.value,
                             onSearchQueryChanged = { newQuery -> searchQuery.value = newQuery },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
                         )
                     }
                 }
@@ -142,10 +144,11 @@ class MainActivity : ComponentActivity() {
                     .fillMaxWidth()
                     .padding(paddingValues)
                     .padding(16.dp)
-                    .verticalScroll(scrollState)
-            ) {
+                    .verticalScroll(scrollState)){
                 displayedTasks.forEach { task ->
-                    TaskItem(task, allTasks)
+                    // Проверяем наличие состояния для задачи или создаем новое
+                    val editState = editDialogStates.getOrPut(task) { mutableStateOf(false) }
+                    TaskItem(task = task, tasks = allTasks, showDialog = editState)
                 }
                 if (showAddDialog.value) {
                     TaskDialog(
@@ -170,12 +173,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("RememberReturnType")
     @Composable
-    fun TaskItem(task: Task, tasks: MutableList<Task>) {
-        Box(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+    fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Boolean>) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(
-                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -186,6 +194,9 @@ class MainActivity : ComponentActivity() {
                     Text("Priority: ${task.priority}")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { showDialog.value = true }) {
+                    Text(text = "Edit")
+                }
                 Button(onClick = {
                     MainScope().launch {
                         tasks.remove(task)
@@ -195,6 +206,23 @@ class MainActivity : ComponentActivity() {
                     Text("Delete")
                 }
             }
+
+            val initialTag = remember(task) { TaskTag.fromDisplayName(task.tags.first()) }
+            val newTaskTags = remember { mutableStateOf(initialTag) }
+            // Управление состоянием диалога редактирования
+            if (showDialog.value) {
+                EditDialog(
+                    task = task,
+                    showDialog = showDialog,
+                    newTaskTitle = remember { mutableStateOf(task.title) },
+                    newTaskDescription = remember { mutableStateOf(task.description) },
+                    newTaskDate = remember { mutableStateOf(task.date) },
+                    newTaskTags = newTaskTags,
+                    newTaskPriority = remember { mutableStateOf(task.priority) },
+                    taskRepository = taskRepository,
+                )
+            }
         }
     }
+
 }

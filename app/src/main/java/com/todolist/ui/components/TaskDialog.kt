@@ -34,6 +34,7 @@ import com.todolist.data.TaskRepository
 import com.todolist.model.Task
 import com.todolist.util.floatToPriority
 import com.todolist.util.priorityToFloat
+import com.todolist.util.showDatePicker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -45,7 +46,9 @@ enum class TaskTag(val displayName: String) {
     Education("Education");
 
     companion object {
-        fun fromDisplayName(displayName: String): TaskTag? = values().find { it.displayName == displayName }
+        fun fromDisplayName(displayName: String): TaskTag {
+            return values().find { it.displayName == displayName } ?: Work // Возвращает 'Work' как значение по умолчанию
+        }
     }
 }
 
@@ -140,19 +143,3 @@ fun TaskDialog(
     )
 }
 
-
-fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
-    val calendar = Calendar.getInstance()
-    val year = calendar.get(Calendar.YEAR)
-    val month = calendar.get(Calendar.MONTH)
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
-
-    val datePickerDialog = DatePickerDialog(
-        context,
-        { _: DatePicker, year: Int, month: Int, day: Int ->
-            onDateSelected("$year-${month + 1}-$day")
-        },
-        year, month, day
-    )
-    datePickerDialog.show()
-}

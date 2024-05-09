@@ -27,7 +27,6 @@ import kotlinx.coroutines.MainScope
 
 
 
-// test Hariton
 class MainActivity : ComponentActivity() {
     private lateinit var taskRepository: TaskRepository
 

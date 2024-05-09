@@ -10,6 +10,10 @@ class TaskRepository(context: Context) {
         sharedPreferencesManager.saveTasks(tasks)
     }
 
+    fun saveTask(task:Task) {
+        sharedPreferencesManager.saveTask(task)
+    }
+
     fun loadTasks(): List<Task> {
         return sharedPreferencesManager.loadTasks()
     }

@@ -6,7 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -53,11 +55,21 @@ class MainActivity : ComponentActivity() {
         val selectedTab = remember { mutableStateOf("All") }
 
         // Load tasks initially
-        LaunchedEffect(true) {
+        LaunchedEffect(allTasks) {
             allTasks.addAll(taskRepository.loadTasks())
             displayedTasks.addAll(allTasks)
         }
 
+        LaunchedEffect(allTasks.size, selectedTab.value, searchQuery.value) {
+            displayedTasks.clear()
+            displayedTasks.addAll(allTasks.filter { task ->
+                // Проверяем, соответствует ли задача выбранной вкладке
+                (selectedTab.value == "All" || task.tags.contains(selectedTab.value)) &&
+                        // Проверяем, соответствует ли задача условиям поиска
+                        (searchQuery.value.isEmpty() || task.title.contains(searchQuery.value, ignoreCase = true) ||
+                                task.description.contains(searchQuery.value, ignoreCase = true))
+            })
+        }
         // Respond to sorting and search changes
         LaunchedEffect(sortOption.value, sortAscending.value, searchQuery.value) {
             val sortedTasks = if (sortAscending.value) {

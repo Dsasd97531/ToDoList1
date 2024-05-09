@@ -4,14 +4,19 @@ import android.app.DatePickerDialog
 import android.content.Context
 import android.widget.DatePicker
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -66,10 +71,30 @@ fun TaskDialog(
     taskRepository: TaskRepository
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var isStarred by remember { mutableStateOf((false)) }
 
     AlertDialog(
         onDismissRequest = { showDialog.value = false },
-        title = { Text("Add New Task") },
+        title = {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Add New Task")
+            IconButton(
+                onClick = {
+                    isStarred = !isStarred
+                },
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = "Is it your priority task?",
+                    tint = if(isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                )
+            }
+        }},
         text = {
             Column {
                 TextField(

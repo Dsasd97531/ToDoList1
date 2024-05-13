@@ -10,10 +10,11 @@ class SharedPreferencesManager(context: Context) {
     fun saveTasks(tasks: List<Task>) {
         val editor = prefs.edit()
         val tasksAsStrings = tasks.map { task ->
-            "${task.id}|${task.title}|${task.description}|${task.date}|${task.tags.joinToString(",")}|${task.priority}"
+            "${task.id}|${task.title}|${task.description}|${task.date}|${task.tags.joinToString(",")}|${task.priority}|${task.isStarred}"
         }
         editor.putStringSet("tasks", tasksAsStrings.toSet())
         editor.apply()
+
     }
 
     fun saveTask(task: Task) {
@@ -32,7 +33,7 @@ class SharedPreferencesManager(context: Context) {
 
         // Сериализация списка задач обратно в строку
         val tasksAsStrings = taskList.map { t ->
-            "${t.id}|${t.title}|${t.description}|${t.date}|${t.tags.joinToString(",")}|${t.priority}"
+            "${t.id}|${t.title}|${t.description}|${t.date}|${t.tags.joinToString(",")}|${t.priority}|${t.isStarred}"
         }.toSet()
 
         // Сохранение обновлённого списка задач
@@ -49,7 +50,8 @@ class SharedPreferencesManager(context: Context) {
             description = parts[2],
             date = parts[3],
             tags = parts[4].split(",").toList(),
-            priority = parts[5]
+            priority = parts[5],
+            isStarred = parts[6].toBoolean()
         )
     }
     fun loadTasks(): List<Task> {
@@ -62,7 +64,8 @@ class SharedPreferencesManager(context: Context) {
                 description = parts[2],
                 date = parts[3],
                 tags = parts[4].split(",").filter { tag -> tag.isNotEmpty() },
-                priority = parts[5]
+                priority = parts[5],
+                isStarred = parts[6].toBoolean()
             )
         } ?: emptyList()
     }

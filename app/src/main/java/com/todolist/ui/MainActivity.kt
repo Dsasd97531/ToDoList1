@@ -2,12 +2,19 @@ package com.todolist.ui
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -15,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.todolist.model.Task
 import com.todolist.ui.components.*
@@ -55,6 +63,7 @@ class MainActivity : ComponentActivity() {
         val sortOption = remember { mutableStateOf("Priority") }
         val sortAscending = remember { mutableStateOf(true) }
         val selectedTab = remember { mutableStateOf("All") }
+
 
         // Load tasks initially
         LaunchedEffect(allTasks) {
@@ -101,6 +110,7 @@ class MainActivity : ComponentActivity() {
                 })
             }
         }
+
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -159,6 +169,7 @@ class MainActivity : ComponentActivity() {
                         newTaskDate = remember { mutableStateOf("") },
                         newTaskTags = remember { mutableStateOf(TaskTag.Work) },
                         newTaskPriority = remember { mutableStateOf("Low") },
+                        initialIsStarred = false,
                         allTasks = allTasks,
                         taskRepository = taskRepository,
                         showDialog = showAddDialog
@@ -177,15 +188,21 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("RememberReturnType")
     @Composable
+
+
     fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Boolean>) {
         Box(modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)) {
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.medium),
+            contentAlignment = Alignment.CenterStart
+        )
+            {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 8.dp),
+                        .padding(8.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -195,18 +212,41 @@ class MainActivity : ComponentActivity() {
                     Text("Tags: ${task.tags.joinToString(", ")}")
                     Text("Priority: ${task.priority}")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { showDialog.value = true }) {
-                    Text(text = "Edit")
-                }
-                Button(onClick = {
-                    MainScope().launch {
-                        tasks.remove(task)
-                        taskRepository.saveTasks(tasks)
+
+                Column(modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxHeight()
+                    .align(Alignment.CenterVertically)
+                )   {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = "Is it your priority task?",
+                            tint = if(task.isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                        )
                     }
-                }) {
-                    Text("Delete")
+                    Button(onClick = { showDialog.value = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text(text = "Edit")
+                    }
+                    Button(onClick = {
+                        MainScope().launch {
+                            tasks.remove(task)
+                            taskRepository.saveTasks(tasks)
+                        }
+                    }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text("Delete")
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
                 }
+
+
+
             }
 
             val initialTag = remember(task) { TaskTag.fromDisplayName(task.tags.first()) }
@@ -222,8 +262,10 @@ class MainActivity : ComponentActivity() {
                     newTaskTags = newTaskTags,
                     newTaskPriority = remember { mutableStateOf(task.priority) },
                     taskRepository = taskRepository,
+                    initialIsStarred = task.isStarred
                 )
             }
+
         }
     }
 

@@ -2,14 +2,19 @@ package com.todolist.ui.components
 
 import android.content.Context
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,18 +48,40 @@ fun EditDialog(
     newTaskDate: MutableState<String>,
     newTaskTags: MutableState<TaskTag>,
     newTaskPriority: MutableState<String>,
+    initialIsStarred: Boolean,
     showDialog: MutableState<Boolean>,
     context: Context = LocalContext.current,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
     taskRepository: TaskRepository
 ) {
     var expanded by remember { mutableStateOf(false) }
-
+    var isStarred by remember { mutableStateOf((initialIsStarred)) }
     AlertDialog(
         onDismissRequest = {showDialog.value = false},
-        title = { Text("Edit Task") },
+        title = {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Edit Task")
+                IconButton(
+                    onClick = {
+                        isStarred = !isStarred
+                    },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "Is it your priority task?",
+                        tint = if(isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                    )
+                }
+            }
+        },
         text = {
                Column {
+
                     TextField(
                         value = newTaskTitle.value,
                         onValueChange = { newTaskTitle.value = it },
@@ -110,6 +137,7 @@ fun EditDialog(
                     task.date = newTaskDate.value
                     task.tags = listOf(newTaskTags.value.displayName)
                     task.priority = newTaskPriority.value
+                    task.isStarred = isStarred
                     taskRepository.saveTask(task)
                     showDialog.value = false
                 }

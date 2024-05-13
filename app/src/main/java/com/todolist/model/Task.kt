@@ -10,5 +10,6 @@ data class Task(
     var description: String,
     var date: String,
     var tags: List<String>,
-    var priority: String
+    var priority: String,
+    var isStarred: Boolean
 )

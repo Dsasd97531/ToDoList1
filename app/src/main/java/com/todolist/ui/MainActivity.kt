@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.todolist.model.Task
@@ -194,7 +195,7 @@ class MainActivity : ComponentActivity() {
         Box(modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
-            .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.medium),
+            .border(2.dp, Color(android.graphics.Color.parseColor("#40739e")), shape = MaterialTheme.shapes.medium),
             contentAlignment = Alignment.CenterStart
         )
             {

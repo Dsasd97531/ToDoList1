@@ -156,7 +156,7 @@ class MainActivity : ComponentActivity() {
                     .padding(paddingValues)
                     .padding(16.dp)
                     .verticalScroll(scrollState)){
-                displayedTasks.forEach { task ->
+                displayedTasks.sortedByDescending { it.isStarred }.forEach { task ->
                     // Проверяем наличие состояния для задачи или создаем новое
                     val editState = editDialogStates.getOrPut(task) { mutableStateOf(false) }
                     TaskItem(task = task, tasks = allTasks, showDialog = editState)

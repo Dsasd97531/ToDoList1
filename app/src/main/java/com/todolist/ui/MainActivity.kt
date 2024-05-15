@@ -20,10 +20,9 @@ import com.todolist.model.Task
 import com.todolist.model.TaskTag
 import com.todolist.ui.components.*
 import com.todolist.ui.theme.ToDoListTheme
-import com.todolist.util.priorityToFloat
 import com.todolist.viewmodel.TaskViewModel
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.livedata.observeAsState
+import com.todolist.util.formatDate
+import com.todolist.util.intToPriority
 
 
 class MainActivity : ComponentActivity() {
@@ -43,7 +42,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ToDoListScreen(taskViewModel: TaskViewModel) {
-    val tasks by taskViewModel.tasks.observeAsState(emptyList())
+    val tasks by taskViewModel.tasks.collectAsState(emptyList())
     val scrollState = rememberScrollState()
     val showAddDialog = remember { mutableStateOf(false) }
     val editDialogStates = remember { mutableStateMapOf<Task, MutableState<Boolean>>() }
@@ -105,20 +104,25 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                 TaskDialog(
                     newTaskTitle = remember { mutableStateOf("") },
                     newTaskDescription = remember { mutableStateOf("") },
-                    newTaskDate = remember { mutableStateOf("") },
+                    newTaskDate = remember { mutableStateOf<Long?>(null) },
                     newTaskTags = remember { mutableStateOf(TaskTag.Work) },
                     newTaskPriority = remember { mutableStateOf("Low") },
                     initialIsStarred = false,
-                    allTasks = tasks.toMutableStateList(),
-                    taskRepository = taskViewModel.repository,
-                    showDialog = showAddDialog
+                    showDialog = showAddDialog,
+                    taskViewModel = taskViewModel
                 )
             }
             if (showSortDialog.value) {
                 SortDialog(
                     showDialog = showSortDialog,
                     sortOption = sortOption,
-                    sortAscending = sortAscending
+                    sortAscending = sortAscending,
+                    onSortOptionSelected = { option, ascending ->
+                        when (option) {
+                            "Priority" -> taskViewModel.sortTasksByPriority(ascending)
+                            "Date" -> taskViewModel.sortTasksByDate(ascending)
+                        }
+                    }
                 )
             }
         }
@@ -126,10 +130,11 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
 }
 @Composable
 fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Boolean>, taskViewModel: TaskViewModel) {
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 10.dp, vertical = 8.dp)
-        .border(2.dp, Color(android.graphics.Color.parseColor("#40739e")), shape = MaterialTheme.shapes.medium),
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .border(2.dp, Color(android.graphics.Color.parseColor("#40739e")), shape = MaterialTheme.shapes.medium),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -142,15 +147,16 @@ fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Bool
             ) {
                 Text("Title: ${task.title}")
                 Text("Description: ${task.description}")
-                Text("Date: ${task.date}")
+                Text("Date: ${formatDate(task.date)}")
                 Text("Tags: ${task.tags.joinToString(", ")}")
-                Text("Priority: ${task.priority}")
+                Text("Priority: ${intToPriority(task.priority)}")  // Конвертируем приоритет в строку
             }
 
-            Column(modifier = Modifier
-                .padding(vertical = 8.dp)
-                .fillMaxHeight()
-                .align(Alignment.CenterVertically)
+            Column(
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxHeight()
+                    .align(Alignment.CenterVertically)
             ) {
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
@@ -183,10 +189,11 @@ fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Bool
                 showDialog = showDialog,
                 newTaskTitle = remember { mutableStateOf(task.title) },
                 newTaskDescription = remember { mutableStateOf(task.description) },
-                newTaskDate = remember { mutableStateOf(task.date) },
-                newTaskTags = newTaskTags,
-                newTaskPriority = remember { mutableStateOf(task.priority) },
+                newTaskDate = remember { mutableStateOf(task.date) },  // Long type for date
+                newTaskTags = remember { mutableStateOf(TaskTag.fromDisplayName(task.tags.first())) },
+                newTaskPriority = remember { mutableStateOf(intToPriority(task.priority)) },  // String type for priority
                 taskRepository = taskViewModel.repository,
+                taskViewModel = taskViewModel,  // Передаем TaskViewModel
                 initialIsStarred = task.isStarred
             )
         }

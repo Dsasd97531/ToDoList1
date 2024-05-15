@@ -27,7 +27,6 @@ fun filterTasks(tasks: List<Task>, query: String): List<Task> {
     return if (query.isEmpty()) tasks else tasks.filter {
         it.title.contains(query, ignoreCase = true) ||
                 it.description.contains(query, ignoreCase = true) ||
-                it.date.contains(query) ||
                 it.tags.joinToString().contains(query, ignoreCase = true)
     }
 }

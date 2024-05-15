@@ -1,6 +1,5 @@
 package com.todolist.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -18,27 +17,31 @@ import com.todolist.data.TaskRepository
 import com.todolist.model.Task
 import com.todolist.model.TaskTag
 import com.todolist.util.floatToPriority
+import com.todolist.util.formatDate
 import com.todolist.util.priorityToFloat
-import com.todolist.util.showDatePicker
+import com.todolist.util.priorityToInt
+import com.todolist.util.showDateTimePicker
+import com.todolist.viewmodel.TaskViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
 fun EditDialog(
     task: Task,
+    showDialog: MutableState<Boolean>,
     newTaskTitle: MutableState<String>,
     newTaskDescription: MutableState<String>,
-    newTaskDate: MutableState<String>,
+    newTaskDate: MutableState<Long?>,
     newTaskTags: MutableState<TaskTag>,
     newTaskPriority: MutableState<String>,
+    taskRepository: TaskRepository,
+    taskViewModel: TaskViewModel,  // Добавляем TaskViewModel
     initialIsStarred: Boolean,
-    showDialog: MutableState<Boolean>,
-    context: Context = LocalContext.current,
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
-    taskRepository: TaskRepository
+    coroutineScope: CoroutineScope = rememberCoroutineScope()
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     var isStarred by remember { mutableStateOf(initialIsStarred) }
+    var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { showDialog.value = false },
@@ -75,8 +78,11 @@ fun EditDialog(
                     onValueChange = { newTaskDescription.value = it },
                     label = { Text("Task Description") }
                 )
-                Button(onClick = { showDatePicker(context) { date -> newTaskDate.value = date } }) {
-                    Text("Select Date")
+                Button(onClick = { showDateTimePicker(context) { timestamp -> newTaskDate.value = timestamp } }) {
+                    Text("Select Date and Time")
+                }
+                newTaskDate.value?.let {
+                    Text("Selected Date and Time: ${formatDate(it)}")
                 }
                 Button(onClick = { expanded = true }) {
                     Text("Select Tag: ${newTaskTags.value.displayName}")
@@ -110,19 +116,25 @@ fun EditDialog(
         },
         confirmButton = {
             Button(onClick = {
-                coroutineScope.launch {
-                    task.title = newTaskTitle.value
-                    task.description = newTaskDescription.value
-                    task.date = newTaskDate.value
-                    task.tags = listOf(newTaskTags.value.displayName)
-                    task.priority = newTaskPriority.value
-                    task.isStarred = isStarred
-                    taskRepository.updateTask(task)
+                if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value != null) {
+                    val updatedTask = task.copy(
+                        title = newTaskTitle.value,
+                        description = newTaskDescription.value,
+                        date = newTaskDate.value!!,
+                        tags = listOf(newTaskTags.value.displayName),
+                        priority = priorityToInt(newTaskPriority.value),
+                        isStarred = isStarred
+                    )
+                    coroutineScope.launch {
+                        taskRepository.updateTask(updatedTask)
+                        taskViewModel.loadTasks()  // Обновляем задачи после редактирования
+                    }
                     showDialog.value = false
                 }
             }) {
-                Text("Save Changes")
+                Text("OK")
             }
         }
     )
 }
+

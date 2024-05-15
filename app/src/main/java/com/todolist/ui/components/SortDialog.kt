@@ -18,7 +18,8 @@ import androidx.compose.ui.unit.dp
 fun SortDialog(
     showDialog: MutableState<Boolean>,
     sortOption: MutableState<String>,
-    sortAscending: MutableState<Boolean>
+    sortAscending: MutableState<Boolean>,
+    onSortOptionSelected: (String, Boolean) -> Unit
 ) {
     val options = listOf("Priority", "Date")
     AlertDialog(
@@ -36,6 +37,7 @@ fun SortDialog(
                                 sortOption.value = option
                                 sortAscending.value = true
                                 showDialog.value = false
+                                onSortOptionSelected(option, true)
                             }
                         ) {
                             Text("$option Ascending")
@@ -46,6 +48,7 @@ fun SortDialog(
                                 sortOption.value = option
                                 sortAscending.value = false
                                 showDialog.value = false
+                                onSortOptionSelected(option, false)
                             }
                         ) {
                             Text("$option Descending")

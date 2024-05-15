@@ -5,11 +5,11 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "tasks")
 data class Task(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) var id: Int = 0,
     var title: String,
     var description: String,
-    var date: String,
+    var date: Long,
     var tags: List<String>,
-    var priority: String,
+    var priority: Int,
     var isStarred: Boolean
 )

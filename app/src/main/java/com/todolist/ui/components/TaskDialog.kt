@@ -1,101 +1,69 @@
 package com.todolist.ui.components
 
-import android.app.DatePickerDialog
 import android.content.Context
-import android.widget.DatePicker
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import com.todolist.data.TaskRepository
 import com.todolist.model.Task
+import com.todolist.model.TaskTag
 import com.todolist.util.floatToPriority
+import com.todolist.util.formatDate
 import com.todolist.util.priorityToFloat
-import com.todolist.util.showDatePicker
+import com.todolist.util.priorityToInt
+import com.todolist.util.showDateTimePicker
+import com.todolist.viewmodel.TaskViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.util.Calendar
-
-enum class TaskTag(val displayName: String) {
-    Work("Work"),
-    Family("Family"),
-    Health("Health"),
-    Education("Education");
-
-    companion object {
-        fun fromDisplayName(displayName: String): TaskTag {
-            return values().find { it.displayName == displayName } ?: Work // Возвращает 'Work' как значение по умолчанию
-        }
-    }
-}
 
 @Composable
 fun TaskDialog(
     newTaskTitle: MutableState<String>,
     newTaskDescription: MutableState<String>,
-    newTaskDate: MutableState<String>,
+    newTaskDate: MutableState<Long?>,
     newTaskTags: MutableState<TaskTag>,
     newTaskPriority: MutableState<String>,
     initialIsStarred: Boolean,
-    allTasks: SnapshotStateList<Task>,
     showDialog: MutableState<Boolean>,
     context: Context = LocalContext.current,
+    taskViewModel: TaskViewModel,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
-    taskRepository: TaskRepository
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var isStarred by remember { mutableStateOf((initialIsStarred)) }
+    var isStarred by remember { mutableStateOf(initialIsStarred) }
 
     AlertDialog(
         onDismissRequest = { showDialog.value = false },
         title = {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Add New Task")
-            IconButton(
-                onClick = {
-                    isStarred = !isStarred
-                },
-                modifier = Modifier.padding(start = 8.dp)
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = "Is it your priority task?",
-                    tint = if(isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
-                )
+                Text("Add New Task")
+                IconButton(
+                    onClick = {
+                        isStarred = !isStarred
+                    },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "Is it your priority task?",
+                        tint = if (isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                    )
+                }
             }
-        }},
+        },
         text = {
             Column {
                 TextField(
@@ -108,15 +76,16 @@ fun TaskDialog(
                     onValueChange = { newTaskDescription.value = it },
                     label = { Text("Task Description") }
                 )
-                Button(onClick = { showDatePicker(context) { date -> newTaskDate.value = date } }) {
-                    Text("Select Date")
+                Button(onClick = { showDateTimePicker(context) { timestamp -> newTaskDate.value = timestamp } }) {
+                    Text("Select Date and Time")
                 }
-                // Button to trigger the Popup for tag selection
+                newTaskDate.value?.let {
+                    Text("Selected Date and Time: ${formatDate(it)}")
+                }
                 Button(onClick = { expanded = true }) {
                     Text("Select Tag: ${newTaskTags.value.displayName}")
                     Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
                 }
-                // Popup for selecting tags
                 if (expanded) {
                     Popup(alignment = Alignment.Center) {
                         Column(modifier = Modifier.background(Color.White).padding(8.dp)) {
@@ -145,22 +114,21 @@ fun TaskDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value.isNotEmpty()) {
+                if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value != null) {
                     val newTask = Task(
                         title = newTaskTitle.value,
                         description = newTaskDescription.value,
-                        date = newTaskDate.value,
+                        date = newTaskDate.value!!,
                         tags = listOf(newTaskTags.value.displayName),
-                        priority = newTaskPriority.value,
+                        priority = priorityToInt(newTaskPriority.value),
                         isStarred = isStarred
                     )
-                    allTasks.add(newTask)
                     coroutineScope.launch {
-                        taskRepository.saveTasks(allTasks)
+                        taskViewModel.insertTask(newTask)
                     }
                     newTaskTitle.value = ""
                     newTaskDescription.value = ""
-                    newTaskDate.value = ""
+                    newTaskDate.value = null
                     showDialog.value = false
                 }
             }) {

@@ -1,9 +1,7 @@
-
-
-
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    kotlin("kapt")
 }
 
 android {
@@ -60,7 +58,10 @@ dependencies {
     implementation(libs.androidx.material3.android)
     implementation(libs.material)
     implementation(libs.firebase.crashlytics.buildtools)
-    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.compose.runtime.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

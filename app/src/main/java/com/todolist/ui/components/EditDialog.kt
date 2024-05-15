@@ -1,31 +1,12 @@
 package com.todolist.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,30 +15,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import com.todolist.data.TaskRepository
 import com.todolist.model.Task
+import com.todolist.model.TaskTag
 import com.todolist.util.floatToPriority
+import com.todolist.util.formatDate
 import com.todolist.util.priorityToFloat
-import com.todolist.util.showDatePicker
+import com.todolist.util.priorityToInt
+import com.todolist.util.showDateTimePicker
+import com.todolist.viewmodel.TaskViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
 fun EditDialog(
-    task:Task,
+    task: Task,
+    showDialog: MutableState<Boolean>,
     newTaskTitle: MutableState<String>,
     newTaskDescription: MutableState<String>,
-    newTaskDate: MutableState<String>,
+    newTaskDate: MutableState<Long?>,
     newTaskTags: MutableState<TaskTag>,
     newTaskPriority: MutableState<String>,
+    taskRepository: TaskRepository,
+    taskViewModel: TaskViewModel,  // Добавляем TaskViewModel
     initialIsStarred: Boolean,
-    showDialog: MutableState<Boolean>,
-    context: Context = LocalContext.current,
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
-    taskRepository: TaskRepository
+    coroutineScope: CoroutineScope = rememberCoroutineScope()
 ) {
+    val context = LocalContext.current
+    var isStarred by remember { mutableStateOf(initialIsStarred) }
     var expanded by remember { mutableStateOf(false) }
-    var isStarred by remember { mutableStateOf((initialIsStarred)) }
+
     AlertDialog(
-        onDismissRequest = {showDialog.value = false},
+        onDismissRequest = { showDialog.value = false },
         title = {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -74,76 +61,80 @@ fun EditDialog(
                     Icon(
                         imageVector = Icons.Filled.Star,
                         contentDescription = "Is it your priority task?",
-                        tint = if(isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                        tint = if (isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
                     )
                 }
             }
         },
         text = {
-               Column {
-
-                    TextField(
-                        value = newTaskTitle.value,
-                        onValueChange = { newTaskTitle.value = it },
-                        label = { Text("Task Title") }
-                    )
-                    TextField(
-                       value = newTaskDescription.value,
-                       onValueChange = { newTaskDescription.value = it },
-                       label = { Text("Task Description") }
-                    )
-                    Button(onClick = { showDatePicker(context) { date -> newTaskDate.value = date } }) {
-                       Text("Select Date")
+            Column {
+                TextField(
+                    value = newTaskTitle.value,
+                    onValueChange = { newTaskTitle.value = it },
+                    label = { Text("Task Title") }
+                )
+                TextField(
+                    value = newTaskDescription.value,
+                    onValueChange = { newTaskDescription.value = it },
+                    label = { Text("Task Description") }
+                )
+                Button(onClick = { showDateTimePicker(context) { timestamp -> newTaskDate.value = timestamp } }) {
+                    Text("Select Date and Time")
+                }
+                newTaskDate.value?.let {
+                    Text("Selected Date and Time: ${formatDate(it)}")
+                }
+                Button(onClick = { expanded = true }) {
+                    Text("Select Tag: ${newTaskTags.value.displayName}")
+                    Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
+                }
+                if (expanded) {
+                    Popup(alignment = Alignment.Center) {
+                        Column(modifier = Modifier.background(Color.White).padding(8.dp)) {
+                            TaskTag.values().forEach { tag ->
+                                TextButton(
+                                    onClick = {
+                                        newTaskTags.value = tag
+                                        expanded = false
+                                    }
+                                ) {
+                                    Text(tag.displayName)
+                                }
+                            }
+                        }
                     }
-                    // Button to trigger the Popup for tag selection
-                    Button(onClick = { expanded = true }) {
-                       Text("Select Tag: ${newTaskTags.value.displayName}")
-                       Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
-                    }
-                    // Popup for selecting tags
-                    if (expanded) {
-                       Popup(alignment = Alignment.Center) {
-                           Column(modifier = Modifier.background(Color.White).padding(8.dp)) {
-                               TaskTag.values().forEach { tag ->
-                                   TextButton(
-                                       onClick = {
-                                           newTaskTags.value = tag
-                                           expanded = false
-                                       }
-                                   ) {
-                                       Text(tag.displayName)
-                                   }
-                               }
-                           }
-                       }
-                    }
-                    Slider(
-                       value = priorityToFloat(newTaskPriority.value),
-                       onValueChange = { value -> newTaskPriority.value = floatToPriority(value) },
-                       valueRange = 0f..4f,
-                       steps = 4,
-                       modifier = Modifier.fillMaxWidth()
-                    )
-                    Text("Priority: ${newTaskPriority.value}")
-
-               }
+                }
+                Slider(
+                    value = priorityToFloat(newTaskPriority.value),
+                    onValueChange = { value -> newTaskPriority.value = floatToPriority(value) },
+                    valueRange = 0f..4f,
+                    steps = 4,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text("Priority: ${newTaskPriority.value}")
+            }
         },
         confirmButton = {
             Button(onClick = {
-                coroutineScope.launch {
-                    // Пример обновления задачи в репозитории
-                    task.title = newTaskTitle.value
-                    task.description = newTaskDescription.value
-                    task.date = newTaskDate.value
-                    task.tags = listOf(newTaskTags.value.displayName)
-                    task.priority = newTaskPriority.value
-                    task.isStarred = isStarred
-                    taskRepository.saveTask(task)
+                if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value != null) {
+                    val updatedTask = task.copy(
+                        title = newTaskTitle.value,
+                        description = newTaskDescription.value,
+                        date = newTaskDate.value!!,
+                        tags = listOf(newTaskTags.value.displayName),
+                        priority = priorityToInt(newTaskPriority.value),
+                        isStarred = isStarred
+                    )
+                    coroutineScope.launch {
+                        taskRepository.updateTask(updatedTask)
+                        taskViewModel.loadTasks()  // Обновляем задачи после редактирования
+                    }
                     showDialog.value = false
                 }
             }) {
-                Text("Save Changes")
+                Text("OK")
             }
         }
     )
 }
+

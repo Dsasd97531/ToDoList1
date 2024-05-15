@@ -23,10 +23,11 @@ fun SearchDialog(
     )
 }
 
+
 fun filterTasks(tasks: List<Task>, query: String): List<Task> {
     return if (query.isEmpty()) tasks else tasks.filter {
-        it.title.contains(query, ignoreCase = true) ||
-                it.description.contains(query, ignoreCase = true) ||
-                it.tags.joinToString().contains(query, ignoreCase = true)
+        it.title.contains(query, ignoreCase = true)
     }
 }
+
+

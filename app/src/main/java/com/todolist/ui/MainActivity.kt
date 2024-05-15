@@ -23,6 +23,8 @@ import com.todolist.ui.theme.ToDoListTheme
 import com.todolist.viewmodel.TaskViewModel
 import com.todolist.util.formatDate
 import com.todolist.util.intToPriority
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
@@ -51,7 +53,9 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
     val searchQuery = remember { mutableStateOf("") }
     val sortOption = remember { mutableStateOf("Priority") }
     val sortAscending = remember { mutableStateOf(true) }
-    val selectedTab = remember { mutableStateOf("All") }
+    val selectedTag = remember { mutableStateOf("All") }
+
+    val filteredTasks = filterTasksByTag(filterTasks(tasks, searchQuery.value), selectedTag.value)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -68,9 +72,9 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                         Text(if (showSearchDialog.value) "Close Search" else "Search Tasks")
                     }
                 }
-                TaskTabs(
-                    selectedTab = selectedTab.value,
-                    onTabSelected = { selectedTab.value = it },
+                TaskTagDropdown(
+                    selectedTag = selectedTag.value,
+                    onTagSelected = { selectedTag.value = it },
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (showSearchDialog.value) {
@@ -96,9 +100,13 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                 .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(scrollState)) {
-            tasks.sortedByDescending { it.isStarred }.forEach { task ->
-                val editState = editDialogStates.getOrPut(task) { mutableStateOf(false) }
-                TaskItem(task = task, tasks = tasks.toMutableList(), showDialog = editState, taskViewModel = taskViewModel)
+            if (filteredTasks.isEmpty() && searchQuery.value.isNotEmpty()) {
+                Text("No tasks found", modifier = Modifier.padding(16.dp))
+            } else {
+                filteredTasks.forEach { task ->
+                    val editState = editDialogStates.getOrPut(task) { mutableStateOf(false) }
+                    TaskItem(task = task, showDialog = editState, taskViewModel = taskViewModel)
+                }
             }
             if (showAddDialog.value) {
                 TaskDialog(
@@ -128,8 +136,16 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
         }
     }
 }
+
 @Composable
-fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Boolean>, taskViewModel: TaskViewModel) {
+fun TaskItem(
+    task: Task,
+    showDialog: MutableState<Boolean>,
+    taskViewModel: TaskViewModel
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val isStarred = remember { mutableStateOf(task.isStarred) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -149,7 +165,7 @@ fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Bool
                 Text("Description: ${task.description}")
                 Text("Date: ${formatDate(task.date)}")
                 Text("Tags: ${task.tags.joinToString(", ")}")
-                Text("Priority: ${intToPriority(task.priority)}")  // Конвертируем приоритет в строку
+                Text("Priority: ${intToPriority(task.priority)}")
             }
 
             Column(
@@ -160,20 +176,28 @@ fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Bool
             ) {
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
-                    onClick = {},
+                    onClick = {
+                        isStarred.value = !isStarred.value
+                        task.isStarred = isStarred.value
+                        coroutineScope.launch {
+                            taskViewModel.updateTask(task)
+                        }
+                    },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Star,
                         contentDescription = "Is it your priority task?",
-                        tint = if (task.isStarred) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                        tint = if (isStarred.value) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
                     )
                 }
                 Button(onClick = { showDialog.value = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                     Text(text = "Edit")
                 }
                 Button(onClick = {
-                    taskViewModel.deleteTask(task)
+                    coroutineScope.launch {
+                        taskViewModel.deleteTask(task)
+                    }
                 }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                     Text("Delete")
                 }
@@ -189,11 +213,11 @@ fun TaskItem(task: Task, tasks: MutableList<Task>, showDialog: MutableState<Bool
                 showDialog = showDialog,
                 newTaskTitle = remember { mutableStateOf(task.title) },
                 newTaskDescription = remember { mutableStateOf(task.description) },
-                newTaskDate = remember { mutableStateOf(task.date) },  // Long type for date
+                newTaskDate = remember { mutableStateOf(task.date) },
                 newTaskTags = remember { mutableStateOf(TaskTag.fromDisplayName(task.tags.first())) },
-                newTaskPriority = remember { mutableStateOf(intToPriority(task.priority)) },  // String type for priority
+                newTaskPriority = remember { mutableStateOf(intToPriority(task.priority)) },
                 taskRepository = taskViewModel.repository,
-                taskViewModel = taskViewModel,  // Передаем TaskViewModel
+                taskViewModel = taskViewModel,
                 initialIsStarred = task.isStarred
             )
         }

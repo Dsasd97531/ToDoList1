@@ -1,20 +1,22 @@
 package com.todolist.data
 
-import android.content.Context
 import com.todolist.model.Task
 
-class TaskRepository(context: Context) {
-    private val sharedPreferencesManager = SharedPreferencesManager(context)
+class TaskRepository(private val taskDao: TaskDao) {
 
-    fun saveTasks(tasks: List<Task>) {
-        sharedPreferencesManager.saveTasks(tasks)
+    suspend fun getAllTasks(): List<Task> {
+        return taskDao.getAllTasks()
     }
 
-    fun saveTask(task:Task) {
-        sharedPreferencesManager.saveTask(task)
+    suspend fun insertTask(task: Task) {
+        taskDao.insert(task)
     }
 
-    fun loadTasks(): List<Task> {
-        return sharedPreferencesManager.loadTasks()
+    suspend fun updateTask(task: Task) {
+        taskDao.update(task)
+    }
+
+    suspend fun deleteTask(task: Task) {
+        taskDao.delete(task)
     }
 }

@@ -55,8 +55,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
     val sortAscending = remember { mutableStateOf(true) }
     val selectedTag = remember { mutableStateOf("All") }
 
-    val sortedTasks = tasks.sortedByDescending { it.isStarred }
-    val filteredTasks = filterTasksByTag(filterTasks(sortedTasks, searchQuery.value), selectedTag.value)
+    val filteredTasks = filterTasksByTag(filterTasks(tasks, searchQuery.value), selectedTag.value)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

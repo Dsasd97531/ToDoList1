@@ -1,6 +1,7 @@
 package com.todolist.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.todolist.data.DatabaseProvider
@@ -14,7 +15,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class TaskViewModel(application: Application) : AndroidViewModel(application) {
-
     val repository: TaskRepository
 
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
@@ -40,8 +40,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
             withContext(Dispatchers.IO) {
                 repository.insertTask(task)
             }
-            // Добавляем новую задачу к текущему списку
-            _tasks.value = _tasks.value + task
+            loadTasks() // Reload the tasks after insertion
         }
     }
 
@@ -50,7 +49,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
             withContext(Dispatchers.IO) {
                 repository.updateTask(task)
             }
-            // Обновляем задачу в текущем списке
+            // Update the task list after modification
             _tasks.value = _tasks.value.map {
                 if (it.id == task.id) task else it
             }
@@ -62,11 +61,10 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
             withContext(Dispatchers.IO) {
                 repository.deleteTask(task)
             }
-            // Удаляем задачу из текущего списка
+            // Update the task list after deletion
             _tasks.value = _tasks.value.filter { it.id != task.id }
         }
     }
-
 
     fun sortTasksByPriority(ascending: Boolean) {
         viewModelScope.launch {

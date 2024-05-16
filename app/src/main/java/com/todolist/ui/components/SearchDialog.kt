@@ -24,10 +24,14 @@ fun SearchDialog(
 }
 
 
-fun filterTasks(tasks: List<Task>, query: String): List<Task> {
-    return if (query.isEmpty()) tasks else tasks.filter {
-        it.title.contains(query, ignoreCase = true)
+fun filterTasks(tasks: List<Task>, searchQuery: String, showStarredTasksOnly: Boolean): List<Task> {
+    val filteredBySearch = if (searchQuery.isEmpty()) tasks else tasks.filter {
+        it.title.contains(searchQuery, ignoreCase = true) ||
+                it.description.contains(searchQuery, ignoreCase = true)
+    }
+    return if (showStarredTasksOnly) {
+        filteredBySearch.filter { it.isStarred }
+    } else {
+        filteredBySearch
     }
 }
-
-

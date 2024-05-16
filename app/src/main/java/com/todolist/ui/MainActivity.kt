@@ -1,6 +1,7 @@
 package com.todolist.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -54,8 +55,16 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
     val sortOption = remember { mutableStateOf("Priority") }
     val sortAscending = remember { mutableStateOf(true) }
     val selectedTag = remember { mutableStateOf("All") }
+    val showStarredTasksOnly = remember { mutableStateOf(false) }
 
-    val filteredTasks = filterTasksByTag(filterTasks(tasks, searchQuery.value), selectedTag.value)
+    var filteredTasks = filterTasksByTag(
+        filterTasks(
+            tasks,
+            searchQuery.value,
+            showStarredTasksOnly.value
+        ),
+        selectedTag.value
+    )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -71,12 +80,32 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                     }) {
                         Text(if (showSearchDialog.value) "Close Search" else "Search Tasks")
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
-                TaskTagDropdown(
-                    selectedTag = selectedTag.value,
-                    onTagSelected = { selectedTag.value = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TaskTagDropdown(
+                        selectedTag = selectedTag.value,
+                        onTagSelected = { selectedTag.value = it },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            showStarredTasksOnly.value = !showStarredTasksOnly.value
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                    ) {
+                        Text(
+                            text = if (showStarredTasksOnly.value) "Show All Tasks" else "Show Starred Tasks",
+                            color = Color.White
+                        )
+                    }
+                }
                 if (showSearchDialog.value) {
                     SearchDialog(
                         searchQuery = searchQuery.value,
@@ -99,13 +128,16 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                 .fillMaxWidth()
                 .padding(paddingValues)
                 .padding(16.dp)
-                .verticalScroll(scrollState)) {
+                .verticalScroll(scrollState)
+        ) {
             if (filteredTasks.isEmpty() && searchQuery.value.isNotEmpty()) {
                 Text("No tasks found", modifier = Modifier.padding(16.dp))
             } else {
                 filteredTasks.forEach { task ->
                     val editState = editDialogStates.getOrPut(task) { mutableStateOf(false) }
-                    TaskItem(task = task, showDialog = editState, taskViewModel = taskViewModel)
+                    key(task.id) { // Ensure proper recomposition with key
+                        TaskItem(task = task, showDialog = editState, taskViewModel = taskViewModel)
+                    }
                 }
             }
             if (showAddDialog.value) {
@@ -136,6 +168,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
         }
     }
 }
+
 
 @Composable
 fun TaskItem(
@@ -205,8 +238,6 @@ fun TaskItem(
             }
         }
 
-        val initialTag = remember(task) { TaskTag.fromDisplayName(task.tags.first()) }
-        val newTaskTags = remember { mutableStateOf(initialTag) }
         if (showDialog.value) {
             EditDialog(
                 task = task,

@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.todolist.model.Task
 import com.todolist.model.TaskTag
@@ -45,7 +47,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 @Composable
 fun ToDoListScreen(taskViewModel: TaskViewModel) {
     val tasks by taskViewModel.tasks.collectAsState(emptyList())
@@ -53,18 +54,21 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
     val showAddDialog = remember { mutableStateOf(false) }
     val editDialogStates = remember { mutableStateMapOf<Task, MutableState<Boolean>>() }
     val showSortDialog = remember { mutableStateOf(false) }
+    val showDetailsDialog = remember { mutableStateOf<Task?>(null) }
     val showSearchDialog = remember { mutableStateOf(false) }
     val searchQuery = remember { mutableStateOf("") }
     val sortOption = remember { mutableStateOf("Priority") }
     val sortAscending = remember { mutableStateOf(true) }
     val selectedTag = remember { mutableStateOf("All") }
     val showStarredTasksOnly = remember { mutableStateOf(false) }
+    val showCompletedTasksOnly = remember { mutableStateOf(false) }
 
-    var filteredTasks = filterTasksByTag(
+    val filteredTasks = filterTasksByTag(
         filterTasks(
             tasks,
             searchQuery.value,
-            showStarredTasksOnly.value
+            showStarredTasksOnly.value,
+            showCompletedTasksOnly.value
         ),
         selectedTag.value
     )
@@ -75,13 +79,13 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
             Column {
                 Row {
                     Button(onClick = { showSortDialog.value = true }) {
-                        Text("Sort Tasks")
+                        Text("Sort")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
                         showSearchDialog.value = !showSearchDialog.value
                     }) {
-                        Text(if (showSearchDialog.value) "Close Search" else "Search Tasks")
+                        Text(if (showSearchDialog.value) "Close" else "Search")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
@@ -101,10 +105,26 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                         onClick = {
                             showStarredTasksOnly.value = !showStarredTasksOnly.value
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (showStarredTasksOnly.value) Color.Yellow else Color.Gray
+                        )
                     ) {
                         Text(
-                            text = if (showStarredTasksOnly.value) "Show All Tasks" else "Show Starred Tasks",
+                            text = "Starred",
+                            color = Color.White
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            showCompletedTasksOnly.value = !showCompletedTasksOnly.value
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (showCompletedTasksOnly.value) Color.Green else Color.Gray
+                        )
+                    ) {
+                        Text(
+                            text = "Completed",
                             color = Color.White
                         )
                     }
@@ -139,7 +159,12 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                 filteredTasks.forEach { task ->
                     val editState = editDialogStates.getOrPut(task) { mutableStateOf(false) }
                     key(task.id) { // Ensure proper recomposition with key
-                        TaskItem(task = task, showDialog = editState, taskViewModel = taskViewModel)
+                        TaskItem(
+                            task = task,
+                            showDialog = editState,
+                            taskViewModel = taskViewModel,
+                            showDetailsDialog = showDetailsDialog
+                        )
                     }
                 }
             }
@@ -171,18 +196,52 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
             }
         }
     }
-}
 
+    showDetailsDialog.value?.let { selectedTask ->
+        TaskDetailsDialog(
+            task = selectedTask,
+            showDialog = showDetailsDialog
+        )
+    }
+}
 
 @Composable
 fun TaskItem(
     task: Task,
     showDialog: MutableState<Boolean>,
+    showDetailsDialog: MutableState<Task?>,
     taskViewModel: TaskViewModel
 ) {
     val coroutineScope = rememberCoroutineScope()
     val isStarred = remember { mutableStateOf(task.isStarred) }
     val isDone = remember { mutableStateOf(task.isDone) }
+    val showDeleteConfirmationDialog = remember { mutableStateOf(false) }
+
+    if (showDeleteConfirmationDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmationDialog.value = false },
+            title = { Text(text = "Confirm Delete") },
+            text = { Text("Are you sure you want to delete this task?") },
+            confirmButton = {
+                Button(onClick = {
+                    coroutineScope.launch {
+                        taskViewModel.deleteTask(task)
+                    }
+                    showDeleteConfirmationDialog.value = false
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteConfirmationDialog.value = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+    val textDecoration = if (isDone.value) TextDecoration.LineThrough else TextDecoration.None
+    val textColor = if (isDone.value) Color.Gray else LocalContentColor.current
 
     Box(
         modifier = Modifier
@@ -195,69 +254,123 @@ fun TaskItem(
             ),
         contentAlignment = Alignment.CenterStart
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.Start
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Title: ${task.title}")
-                Text("Description: ${task.description}")
-                Text("Date: ${formatDate(task.date)}")
-                Text("Tags: ${task.tags.joinToString(", ")}")
-                Text("Priority: ${intToPriority(task.priority)}")
-                Text("IsDone: ${task.isDone}")
-            }
-
-            Column(
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .fillMaxHeight()
-                    .align(Alignment.CenterVertically)
-            ) {
-                Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
                     onClick = {
-                        isStarred.value = !isStarred.value
-                        task.isStarred = isStarred.value
+                        if (!isDone.value) {
+                            isStarred.value = !isStarred.value
+                            task.isStarred = isStarred.value
+                            coroutineScope.launch {
+                                taskViewModel.updateTask(task)
+                            }
+                        }
+                    },
+                    enabled = !isDone.value
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "Star Task",
+                        tint = if (isStarred.value) Color.Yellow.copy(alpha = 0.8f) else textColor
+                    )
+                }
+                Checkbox(
+                    checked = isDone.value,
+                    onCheckedChange = {
+                        isDone.value = it
+                        task.isDone = it
                         coroutineScope.launch {
                             taskViewModel.updateTask(task)
                         }
                     },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = "Is it your priority task?",
-                        tint = if (isStarred.value) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = Color.Green,
+                        uncheckedColor = Color.Red
                     )
-                }
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    textDecoration = textDecoration,
+                    color = textColor
+                )
+                Text(
+                    text = formatDate(task.date),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textDecoration = textDecoration,
+                    color = textColor
+                )
+                Text(
+                    text = intToPriority(task.priority),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textDecoration = textDecoration,
+                    color = textColor
+                )
+                Text(
+                    text = task.tags.joinToString(", "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textDecoration = textDecoration,
+                    color = textColor
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 IconButton(
-                    onClick = { showDialog.value = true },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    onClick = { if (!isDone.value) showDialog.value = true },
+                    enabled = !isDone.value
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
-                        contentDescription = "Edit Button",
-//                        tint = if (isStarred.value) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                        contentDescription = "Edit Task",
+                        tint = if (isDone.value) Color.Gray else LocalContentColor.current
                     )
                 }
                 IconButton(
                     onClick = {
-                        coroutineScope.launch {
-                            taskViewModel.deleteTask(task)
+                        if (isDone.value) {
+                            coroutineScope.launch {
+                                taskViewModel.deleteTask(task)
+                            }
+                        } else {
+                            showDeleteConfirmationDialog.value = true
                         }
-                    },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
-                        contentDescription = "Delete Button",
+                        contentDescription = "Delete Task",
+                        tint = LocalContentColor.current
                     )
                 }
-                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = { showDetailsDialog.value = task }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Task Details",
+                    )
+                }
             }
         }
 

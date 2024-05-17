@@ -33,6 +33,7 @@ fun EditDialog(
     newTaskDescription: MutableState<String>,
     newTaskDate: MutableState<Long?>,
     newTaskTags: MutableState<TaskTag>,
+    initialIsDone: Boolean,
     newTaskPriority: MutableState<String>,
     taskRepository: TaskRepository,
     taskViewModel: TaskViewModel,  // Добавляем TaskViewModel
@@ -42,6 +43,7 @@ fun EditDialog(
     val context = LocalContext.current
     var isStarred by remember { mutableStateOf(initialIsStarred) }
     var expanded by remember { mutableStateOf(false) }
+    var isDone by remember { mutableStateOf(initialIsDone) }
 
     AlertDialog(
         onDismissRequest = { showDialog.value = false },
@@ -123,7 +125,8 @@ fun EditDialog(
                         date = newTaskDate.value!!,
                         tags = listOf(newTaskTags.value.displayName),
                         priority = priorityToInt(newTaskPriority.value),
-                        isStarred = isStarred
+                        isStarred = isStarred,
+                        isDone = isDone
                     )
                     coroutineScope.launch {
                         taskRepository.updateTask(updatedTask)

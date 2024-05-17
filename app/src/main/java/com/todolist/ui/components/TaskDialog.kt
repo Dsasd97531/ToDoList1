@@ -33,6 +33,7 @@ fun TaskDialog(
     newTaskTags: MutableState<TaskTag>,
     newTaskPriority: MutableState<String>,
     initialIsStarred: Boolean,
+    initialIsDone: Boolean,
     showDialog: MutableState<Boolean>,
     context: Context = LocalContext.current,
     taskViewModel: TaskViewModel,
@@ -40,6 +41,7 @@ fun TaskDialog(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var isStarred by remember { mutableStateOf(initialIsStarred) }
+    var isDone by remember { mutableStateOf(initialIsDone) }
 
     AlertDialog(
         onDismissRequest = { showDialog.value = false },
@@ -121,7 +123,8 @@ fun TaskDialog(
                         date = newTaskDate.value!!,
                         tags = listOf(newTaskTags.value.displayName),
                         priority = priorityToInt(newTaskPriority.value),
-                        isStarred = isStarred
+                        isStarred = isStarred,
+                        isDone = isDone,
                     )
                     coroutineScope.launch {
                         taskViewModel.insertTask(newTask)

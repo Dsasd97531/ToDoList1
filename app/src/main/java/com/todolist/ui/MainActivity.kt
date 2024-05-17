@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.todolist.model.Task
 import com.todolist.model.TaskTag
@@ -147,6 +150,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                     newTaskDate = remember { mutableStateOf<Long?>(null) },
                     newTaskTags = remember { mutableStateOf(TaskTag.Work) },
                     newTaskPriority = remember { mutableStateOf("Low") },
+                    initialIsDone = false,
                     initialIsStarred = false,
                     showDialog = showAddDialog,
                     taskViewModel = taskViewModel
@@ -178,12 +182,17 @@ fun TaskItem(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val isStarred = remember { mutableStateOf(task.isStarred) }
+    val isDone = remember { mutableStateOf(task.isDone) }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp)
-            .border(2.dp, Color(android.graphics.Color.parseColor("#40739e")), shape = MaterialTheme.shapes.medium),
+            .border(
+                2.dp,
+                Color(android.graphics.Color.parseColor("#40739e")),
+                shape = MaterialTheme.shapes.medium
+            ),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -199,6 +208,7 @@ fun TaskItem(
                 Text("Date: ${formatDate(task.date)}")
                 Text("Tags: ${task.tags.joinToString(", ")}")
                 Text("Priority: ${intToPriority(task.priority)}")
+                Text("IsDone: ${task.isDone}")
             }
 
             Column(
@@ -224,15 +234,28 @@ fun TaskItem(
                         tint = if (isStarred.value) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
                     )
                 }
-                Button(onClick = { showDialog.value = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text(text = "Edit")
+                IconButton(
+                    onClick = { showDialog.value = true },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Edit Button",
+//                        tint = if (isStarred.value) Color.Yellow.copy(alpha = 0.8f) else LocalContentColor.current
+                    )
                 }
-                Button(onClick = {
-                    coroutineScope.launch {
-                        taskViewModel.deleteTask(task)
-                    }
-                }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text("Delete")
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            taskViewModel.deleteTask(task)
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Delete Button",
+                    )
                 }
                 Spacer(modifier = Modifier.weight(1f))
             }
@@ -249,7 +272,8 @@ fun TaskItem(
                 newTaskPriority = remember { mutableStateOf(intToPriority(task.priority)) },
                 taskRepository = taskViewModel.repository,
                 taskViewModel = taskViewModel,
-                initialIsStarred = task.isStarred
+                initialIsStarred = task.isStarred,
+                initialIsDone = task.isDone
             )
         }
     }

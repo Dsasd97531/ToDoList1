@@ -69,12 +69,14 @@ fun TaskDialog(
                 TextField(
                     value = newTaskTitle.value,
                     onValueChange = { newTaskTitle.value = it },
-                    label = { Text("Task Title") }
+                    label = { Text("Task Title") },
+                    modifier = Modifier.fillMaxWidth()
                 )
                 TextField(
                     value = newTaskDescription.value,
                     onValueChange = { newTaskDescription.value = it },
-                    label = { Text("Task Description") }
+                    label = { Text("Task Description") },
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Button(onClick = { showDateTimePicker(context) { timestamp -> newTaskDate.value = timestamp } }) {
                     Text("Select Date and Time")

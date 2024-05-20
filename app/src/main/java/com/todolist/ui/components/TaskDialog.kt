@@ -22,6 +22,7 @@ import com.todolist.util.priorityToFloat
 import com.todolist.util.priorityToInt
 import com.todolist.util.showDateTimePicker
 import com.todolist.viewmodel.TaskViewModel
+import com.todolist.worker.scheduleTaskReminder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -131,6 +132,10 @@ fun TaskDialog(
                     coroutineScope.launch {
                         taskViewModel.insertTask(newTask)
                     }
+
+                    // Schedule notification
+                    scheduleTaskReminder(context, newTask.title, newTask.id, newTask.date)
+
                     newTaskTitle.value = ""
                     newTaskDescription.value = ""
                     newTaskDate.value = null

@@ -1,9 +1,13 @@
 package com.todolist.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -22,10 +26,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.todolist.model.Task
 import com.todolist.model.TaskTag
 import com.todolist.ui.components.*
 import com.todolist.ui.theme.ToDoListTheme
+import com.todolist.util.NotificationUtils
 import com.todolist.viewmodel.TaskViewModel
 import com.todolist.util.formatDate
 import com.todolist.util.intToPriority
@@ -36,13 +42,37 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val taskViewModel: TaskViewModel by viewModels()
 
+    private val requestNotificationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (!isGranted) {
+            // Handle the case where the user denied the permission
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        NotificationUtils.createNotificationChannel(this)
+        requestNotificationPermissionIfNeeded()
+
         setContent {
             ToDoListTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     ToDoListScreen(taskViewModel)
                 }
+            }
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
     }

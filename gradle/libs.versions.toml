@@ -19,7 +19,8 @@ roomCommon = "2.6.1"
 roomKtx = "2.6.1"
 roomRuntime = "2.6.1"
 roomCompiler = "2.6.1"
-composeRuntime = "1.6.7"  # Добавленная версия Compose Runtime
+composeRuntime = "1.6.7"
+workRuntimeKtx = "2.9.0"  # Добавленная версия Compose Runtime
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,7 +48,8 @@ androidx-room-common = { group = "androidx.room", name = "room-common", version.
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
-androidx-compose-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "composeRuntime" }  # Добавленная библиотека Compose Runtime LiveData
+androidx-compose-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "composeRuntime" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }  # Добавленная библиотека Compose Runtime LiveData
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

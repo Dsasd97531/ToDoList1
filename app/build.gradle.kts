@@ -61,13 +61,27 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.core.ktx)
+    implementation(libs.androidx.junit.ktx)
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.compose.runtime.livedata)
+
+    // Unit Test dependencies
     testImplementation(libs.junit)
+    testImplementation("org.mockito:mockito-core:3.11.2")
+    testImplementation("org.mockito:mockito-inline:3.11.2") // для использования mock в Android тестах
+    testImplementation("androidx.arch.core:core-testing:2.1.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.1")
+
+    // Android Instrumentation Test dependencies
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("androidx.test.ext:junit:1.1.3")
+    androidTestImplementation("androidx.test:core:1.4.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("org.mockito:mockito-android:3.11.2") // для использования mock в Android тестах
+    androidTestImplementation ("androidx.test:rules:1.4.0") // Добавьте эту строку
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }

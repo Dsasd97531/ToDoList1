@@ -45,7 +45,7 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/{LICENSE.md,LICENSE-notice.md,LICENSE.txt,NOTICE.txt}"
         }
     }
 }
@@ -68,20 +68,19 @@ dependencies {
 
     // Unit Test dependencies
     testImplementation(libs.junit)
-    testImplementation("org.mockito:mockito-core:3.11.2")
-    testImplementation("org.mockito:mockito-inline:3.11.2") // для использования mock в Android тестах
-    testImplementation("androidx.arch.core:core-testing:2.1.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.1")
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
 
+    // MockK for unit tests
+    testImplementation(libs.mockk)
+    // MockK for Android Instrumented tests
+    androidTestImplementation(libs.mockkAndroid)
     // Android Instrumentation Test dependencies
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test:core:1.4.0")
-    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.mockito.android)
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    androidTestImplementation("org.mockito:mockito-android:3.11.2") // для использования mock в Android тестах
-    androidTestImplementation ("androidx.test:rules:1.4.0") // Добавьте эту строку
-    debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    androidTestImplementation(libs.androidx.junit.v113)
+    androidTestImplementation(libs.androidx.espresso.core.v340)
 }

@@ -1,6 +1,7 @@
 package com.todolist.ui.components
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -119,6 +120,7 @@ fun TaskDialog(
         },
         confirmButton = {
             Button(onClick = {
+                Log.d("TaskDialog", "OK button clicked")
                 if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value != null) {
                     val newTask = Task(
                         title = newTaskTitle.value,
@@ -140,6 +142,7 @@ fun TaskDialog(
                     newTaskDescription.value = ""
                     newTaskDate.value = null
                     showDialog.value = false
+                    Log.d("TaskDialog", "showDialog set to false")
                 }
             }) {
                 Text("OK")

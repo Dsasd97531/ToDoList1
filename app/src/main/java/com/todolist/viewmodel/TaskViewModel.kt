@@ -1,12 +1,12 @@
 package com.todolist.viewmodel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.todolist.data.DatabaseProvider
 import com.todolist.data.TaskRepository
 import com.todolist.model.Task
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +14,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class TaskViewModel(application: Application) : AndroidViewModel(application) {
+class TaskViewModel(
+    application: Application,
+    val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+) : AndroidViewModel(application) {
     val repository: TaskRepository
 
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
@@ -27,8 +31,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadTasks() {
-        viewModelScope.launch {
-            val taskList = withContext(Dispatchers.IO) {
+        viewModelScope.launch(mainDispatcher) {
+            val taskList = withContext(ioDispatcher) {
                 repository.getAllTasks()
             }
             _tasks.value = taskList
@@ -36,8 +40,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun insertTask(task: Task) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+        viewModelScope.launch(mainDispatcher) {
+            withContext(ioDispatcher) {
                 repository.insertTask(task)
             }
             loadTasks() // Reload the tasks after insertion
@@ -45,8 +49,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateTask(task: Task) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+        viewModelScope.launch(mainDispatcher) {
+            withContext(ioDispatcher) {
                 repository.updateTask(task)
             }
             // Update the task list after modification
@@ -57,8 +61,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deleteTask(task: Task) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+        viewModelScope.launch(mainDispatcher) {
+            withContext(ioDispatcher) {
                 repository.deleteTask(task)
             }
             // Update the task list after deletion
@@ -67,8 +71,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun sortTasksByPriority(ascending: Boolean) {
-        viewModelScope.launch {
-            val sortedTasks = withContext(Dispatchers.IO) {
+        viewModelScope.launch(mainDispatcher) {
+            val sortedTasks = withContext(ioDispatcher) {
                 repository.getTasksSortedByPriority(ascending)
             }
             _tasks.value = sortedTasks
@@ -76,8 +80,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun sortTasksByDate(ascending: Boolean) {
-        viewModelScope.launch {
-            val sortedTasks = withContext(Dispatchers.IO) {
+        viewModelScope.launch(mainDispatcher) {
+            val sortedTasks = withContext(ioDispatcher) {
                 repository.getTasksSortedByDate(ascending)
             }
             _tasks.value = sortedTasks

@@ -2,32 +2,22 @@
 <project version="4">
   <component name="deploymentTargetDropDown">
     <value>
-      <entry key="ExampleInstrumentedTest">
+      <entry key="TaskItemTest">
         <State />
       </entry>
-      <entry key="MainActivityTest">
-        <State />
-      </entry>
-      <entry key="TaskDialogTest">
-        <State>
-          <targetSelectedWithDropDown>
-            <Target>
-              <type value="QUICK_BOOT_TARGET" />
-              <deviceKey>
-                <Key>
-                  <type value="VIRTUAL_DEVICE_PATH" />
-                  <value value="C:\Users\Andrii Makivnychuk\.android\avd\Pixel_4a_API_34.avd" />
-                </Key>
-              </deviceKey>
-            </Target>
-          </targetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-05-26T08:57:52.234126800Z" />
-        </State>
-      </entry>
-      <entry key="TaskUiTests">
+      <entry key="ToDoListScreenTabTest">
         <State />
       </entry>
       <entry key="app">
+        <State />
+      </entry>
+      <entry key="testStarredFilterFunctionality()">
+        <State />
+      </entry>
+      <entry key="testTagFilterFunctionality()">
+        <State />
+      </entry>
+      <entry key="testToggleStarStatus()">
         <State />
       </entry>
     </value>

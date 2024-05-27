@@ -120,7 +120,6 @@ fun TaskDialog(
         },
         confirmButton = {
             Button(onClick = {
-                Log.d("TaskDialog", "OK button clicked")
                 if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value != null) {
                     val newTask = Task(
                         title = newTaskTitle.value,
@@ -142,7 +141,6 @@ fun TaskDialog(
                     newTaskDescription.value = ""
                     newTaskDate.value = null
                     showDialog.value = false
-                    Log.d("TaskDialog", "showDialog set to false")
                 }
             }) {
                 Text("OK")

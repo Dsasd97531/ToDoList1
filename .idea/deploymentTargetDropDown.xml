@@ -8,16 +8,16 @@
       <entry key="app">
         <State />
       </entry>
-      <entry key="testSearchFunctionality()">
-        <State />
-      </entry>
       <entry key="testSortByPriorityAscending()">
         <State />
       </entry>
-      <entry key="testSortFunctionality()">
+      <entry key="testSortFunctionality() (1)">
         <State />
       </entry>
-      <entry key="testSortFunctionality() (1)">
+      <entry key="testTagFilterFunctionality()">
+        <State />
+      </entry>
+      <entry key="testTaskTagDropdownSelection()">
         <State />
       </entry>
     </value>

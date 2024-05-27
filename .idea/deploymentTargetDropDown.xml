@@ -2,35 +2,22 @@
 <project version="4">
   <component name="deploymentTargetDropDown">
     <value>
-      <entry key="EditDialogTest">
+      <entry key="SortDialogTest">
         <State />
-      </entry>
-      <entry key="TaskDialogTest">
-        <State>
-          <targetSelectedWithDropDown>
-            <Target>
-              <type value="QUICK_BOOT_TARGET" />
-              <deviceKey>
-                <Key>
-                  <type value="VIRTUAL_DEVICE_PATH" />
-                  <value value="C:\Users\Andrii Makivnychuk\.android\avd\Pixel_4a_API_34.avd" />
-                </Key>
-              </deviceKey>
-            </Target>
-          </targetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-05-26T08:57:52.234126800Z" />
-        </State>
       </entry>
       <entry key="app">
         <State />
       </entry>
-      <entry key="testDialogDoesNotCloseIfTitleIsEmpty()">
+      <entry key="testSearchFunctionality()">
         <State />
       </entry>
-      <entry key="testEditTaskDialog()">
+      <entry key="testSortByPriorityAscending()">
         <State />
       </entry>
-      <entry key="testTaskDialogWithStar()">
+      <entry key="testSortFunctionality()">
+        <State />
+      </entry>
+      <entry key="testSortFunctionality() (1)">
         <State />
       </entry>
     </value>

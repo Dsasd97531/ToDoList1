@@ -1,7 +1,6 @@
 package com.todolist.ui.components
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -39,14 +38,15 @@ fun TaskDialog(
     showDialog: MutableState<Boolean>,
     context: Context = LocalContext.current,
     taskViewModel: TaskViewModel,
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+    coroutineScope: CoroutineScope = rememberCoroutineScope()
 ) {
+    // Local states for managing UI elements
     var expanded by remember { mutableStateOf(false) }
     var isStarred by remember { mutableStateOf(initialIsStarred) }
     var isDone by remember { mutableStateOf(initialIsDone) }
 
     AlertDialog(
-        onDismissRequest = { showDialog.value = false },
+        onDismissRequest = { showDialog.value = false }, // Close the dialog when dismissed
         title = {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -56,7 +56,7 @@ fun TaskDialog(
                 Text("Add New Task")
                 IconButton(
                     onClick = {
-                        isStarred = !isStarred
+                        isStarred = !isStarred // Toggle the starred status
                     },
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
@@ -72,13 +72,13 @@ fun TaskDialog(
             Column {
                 TextField(
                     value = newTaskTitle.value,
-                    onValueChange = { newTaskTitle.value = it },
+                    onValueChange = { newTaskTitle.value = it }, // Update the task title
                     label = { Text("Task Title") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 TextField(
                     value = newTaskDescription.value,
-                    onValueChange = { newTaskDescription.value = it },
+                    onValueChange = { newTaskDescription.value = it }, // Update the task description
                     label = { Text("Task Description") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -86,20 +86,21 @@ fun TaskDialog(
                     Text("Select Date and Time")
                 }
                 newTaskDate.value?.let {
-                    Text("Selected Date and Time: ${formatDate(it)}")
+                    Text("Selected Date and Time: ${formatDate(it)}") // Display selected date and time
                 }
                 Button(onClick = { expanded = true }) {
                     Text("Select Tag: ${newTaskTags.value.displayName}")
                     Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
                 }
                 if (expanded) {
+                    // Popup for selecting a tag
                     Popup(alignment = Alignment.Center) {
                         Column(modifier = Modifier.background(Color.White).padding(8.dp)) {
                             TaskTag.values().forEach { tag ->
                                 TextButton(
                                     onClick = {
-                                        newTaskTags.value = tag
-                                        expanded = false
+                                        newTaskTags.value = tag // Update selected tag
+                                        expanded = false // Close the dropdown
                                     }
                                 ) {
                                     Text(tag.displayName)
@@ -110,16 +111,17 @@ fun TaskDialog(
                 }
                 Slider(
                     value = priorityToFloat(newTaskPriority.value),
-                    onValueChange = { value -> newTaskPriority.value = floatToPriority(value) },
+                    onValueChange = { value -> newTaskPriority.value = floatToPriority(value) }, // Update task priority
                     valueRange = 0f..4f,
                     steps = 4,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("Priority: ${newTaskPriority.value}")
+                Text("Priority: ${newTaskPriority.value}") // Display current priority
             }
         },
         confirmButton = {
             Button(onClick = {
+                // Validate input fields before creating a new task
                 if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value != null) {
                     val newTask = Task(
                         title = newTaskTitle.value,
@@ -131,12 +133,13 @@ fun TaskDialog(
                         isDone = isDone,
                     )
                     coroutineScope.launch {
-                        taskViewModel.insertTask(newTask)
+                        taskViewModel.insertTask(newTask) // Insert the new task using the ViewModel
                     }
 
-                    // Schedule notification
+                    // Schedule notification for the new task
                     scheduleTaskReminder(context, newTask.title, newTask.id, newTask.date)
 
+                    // Reset input fields and close the dialog
                     newTaskTitle.value = ""
                     newTaskDescription.value = ""
                     newTaskDate.value = null
@@ -148,4 +151,3 @@ fun TaskDialog(
         }
     )
 }
-

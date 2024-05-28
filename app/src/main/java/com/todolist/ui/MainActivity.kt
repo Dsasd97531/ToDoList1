@@ -37,8 +37,10 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
+    // Initialize TaskViewModel using the viewModels delegate
     private val taskViewModel: TaskViewModel by viewModels()
 
+    // Register a result handler for requesting notification permission
     private val requestNotificationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -50,9 +52,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Create notification channel for the app
         NotificationUtils.createNotificationChannel(this)
+
+        // Request notification permission if needed
         requestNotificationPermissionIfNeeded()
 
+        // Set the content of the activity using Compose
         setContent {
             ToDoListTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -62,13 +68,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Check and request notification permission if needed
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Check if the notification permission is already granted
             if (ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
+                // Request the notification permission
                 requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
@@ -76,13 +85,20 @@ class MainActivity : ComponentActivity() {
 }
 @Composable
 fun ToDoListScreen(taskViewModel: TaskViewModel) {
+    // Collect tasks from the ViewModel as state
     val tasks by taskViewModel.tasks.collectAsState(emptyList())
+
+    // Remember the scroll state for the task list
     val scrollState = rememberScrollState()
+
+    // States to manage the visibility of various dialogs
     val showAddDialog = remember { mutableStateOf(false) }
     val editDialogStates = remember { mutableStateMapOf<Task, MutableState<Boolean>>() }
     val showSortDialog = remember { mutableStateOf(false) }
     val showDetailsDialog = remember { mutableStateOf<Task?>(null) }
     val showSearchDialog = remember { mutableStateOf(false) }
+
+    // States to manage search and filtering
     val searchQuery = remember { mutableStateOf("") }
     val sortOption = remember { mutableStateOf("Priority") }
     val sortAscending = remember { mutableStateOf(true) }
@@ -90,6 +106,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
     val showStarredTasksOnly = remember { mutableStateOf(false) }
     val showCompletedTasksOnly = remember { mutableStateOf(false) }
 
+    // Apply filters to the task list
     val filteredTasks = filterTasksByTag(
         filterTasks(
             tasks,
@@ -105,10 +122,12 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
         topBar = {
             Column {
                 Row {
+                    // Button to show the sort dialog
                     Button(onClick = { showSortDialog.value = true }) {
                         Text("Sort")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
+                    // Button to toggle the search dialog
                     Button(onClick = {
                         showSearchDialog.value = !showSearchDialog.value
                     }) {
@@ -122,12 +141,14 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Dropdown to select a tag for filtering
                     TaskTagDropdown(
                         selectedTag = selectedTag.value,
                         onTagSelected = { selectedTag.value = it },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+                    // Button to toggle showing starred tasks only
                     Button(
                         onClick = {
                             showStarredTasksOnly.value = !showStarredTasksOnly.value
@@ -142,6 +163,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
+                    // Button to toggle showing completed tasks only
                     Button(
                         onClick = {
                             showCompletedTasksOnly.value = !showCompletedTasksOnly.value
@@ -156,6 +178,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                         )
                     }
                 }
+                // Search dialog
                 if (showSearchDialog.value) {
                     SearchDialog(
                         searchQuery = searchQuery.value,
@@ -168,6 +191,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
             }
         },
         bottomBar = {
+            // Button to show the add task dialog
             Button(onClick = { showAddDialog.value = true }) {
                 Text("Add Task")
             }
@@ -181,8 +205,10 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                 .verticalScroll(scrollState)
         ) {
             if (filteredTasks.isEmpty() && searchQuery.value.isNotEmpty()) {
+                // Show message if no tasks are found
                 Text("No tasks found", modifier = Modifier.padding(16.dp))
             } else {
+                // Display the filtered tasks
                 filteredTasks.forEach { task ->
                     val editState = editDialogStates.getOrPut(task) { mutableStateOf(false) }
                     key(task.id) { // Ensure proper recomposition with key
@@ -195,6 +221,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                     }
                 }
             }
+            // Show add task dialog
             if (showAddDialog.value) {
                 TaskDialog(
                     newTaskTitle = remember { mutableStateOf("") },
@@ -208,6 +235,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
                     taskViewModel = taskViewModel
                 )
             }
+            // Show sort dialog
             if (showSortDialog.value) {
                 SortDialog(
                     showDialog = showSortDialog,
@@ -224,6 +252,7 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
         }
     }
 
+    // Show task details dialog
     showDetailsDialog.value?.let { selectedTask ->
         TaskDetailsDialog(
             task = selectedTask,
@@ -231,7 +260,6 @@ fun ToDoListScreen(taskViewModel: TaskViewModel) {
         )
     }
 }
-
 @Composable
 fun TaskItem(
     task: Task,
@@ -239,11 +267,17 @@ fun TaskItem(
     showDetailsDialog: MutableState<Task?>,
     taskViewModel: TaskViewModel
 ) {
+    // Create a coroutine scope for asynchronous tasks
     val coroutineScope = rememberCoroutineScope()
+
+    // State for managing the task's starred and done status
     val isStarred = remember { mutableStateOf(task.isStarred) }
     val isDone = remember { mutableStateOf(task.isDone) }
+
+    // State for managing the visibility of the delete confirmation dialog
     val showDeleteConfirmationDialog = remember { mutableStateOf(false) }
 
+    // Delete confirmation dialog
     if (showDeleteConfirmationDialog.value) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmationDialog.value = false },
@@ -267,9 +301,11 @@ fun TaskItem(
         )
     }
 
+    // Apply text decorations and color based on the task's done status
     val textDecoration = if (isDone.value) TextDecoration.LineThrough else TextDecoration.None
     val textColor = if (isDone.value) Color.Gray else LocalContentColor.current
 
+    // Box to contain the task item with border and padding
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -289,6 +325,7 @@ fun TaskItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Star button to toggle the task's starred status
                 IconButton(
                     onClick = {
                         if (!isDone.value) {
@@ -307,6 +344,7 @@ fun TaskItem(
                         tint = if (isStarred.value) Color.Yellow.copy(alpha = 0.8f) else textColor
                     )
                 }
+                // Checkbox to toggle the task's done status
                 Checkbox(
                     checked = isDone.value,
                     onCheckedChange = {
@@ -323,6 +361,7 @@ fun TaskItem(
                 )
             }
 
+            // Display task details: title, date, priority, tags
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -356,6 +395,7 @@ fun TaskItem(
                 )
             }
 
+            // Action buttons: edit, delete, details
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -401,6 +441,7 @@ fun TaskItem(
             }
         }
 
+        // Show edit dialog if needed
         if (showDialog.value) {
             EditDialog(
                 task = task,

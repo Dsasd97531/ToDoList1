@@ -11,28 +11,29 @@ import com.todolist.model.Task
 import com.todolist.util.formatDate
 import com.todolist.util.intToPriority
 
+
 @Composable
 fun TaskDetailsDialog(
     task: Task,
     showDialog: MutableState<Task?>
 ) {
     AlertDialog(
-        onDismissRequest = { showDialog.value = null },
-        title = { Text(text = "Task Details") },
+        onDismissRequest = { showDialog.value = null }, // Close the dialog when dismissed
+        title = { Text(text = "Task Details") }, // Title of the dialog
         text = {
             Column {
-                Text("Title: ${task.title}")
-                Text("Description: ${task.description}")
-                Text("Date: ${formatDate(task.date)}")
-                Text("Tags: ${task.tags.joinToString(", ")}")
-                Text("Priority: ${intToPriority(task.priority)}")
-                Text("Is Done: ${task.isDone}")
-                Text("Is Starred: ${task.isStarred}")
+                Text("Title: ${task.title}") // Display the task title
+                Text("Description: ${task.description}") // Display the task description
+                Text("Date: ${formatDate(task.date)}") // Display the formatted task date
+                Text("Tags: ${task.tags.joinToString(", ")}") // Display the task tags
+                Text("Priority: ${intToPriority(task.priority)}") // Display the task priority
+                Text("Is Done: ${task.isDone}") // Display whether the task is done
+                Text("Is Starred: ${task.isStarred}") // Display whether the task is starred
             }
         },
         confirmButton = {
             Button(onClick = { showDialog.value = null }) {
-                Text("Close")
+                Text("Close") // Button to close the dialog
             }
         }
     )

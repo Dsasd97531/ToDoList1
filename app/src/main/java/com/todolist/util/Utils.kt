@@ -8,16 +8,18 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
+// Convert priority string to corresponding float value
 fun priorityToFloat(priority: String): Float {
     return when (priority) {
         "Medium" -> 1f
         "Important" -> 2f
         "Very Important" -> 3f
         "Urgent" -> 4f
-        else -> 0f
+        else -> 0f  // Low priority
     }
 }
+
+// Convert float value to corresponding priority string
 fun floatToPriority(value: Float): String {
     return when (value.toInt()) {
         1 -> "Medium"
@@ -28,16 +30,18 @@ fun floatToPriority(value: Float): String {
     }
 }
 
+// Convert priority string to corresponding integer value
 fun priorityToInt(priority: String): Int {
     return when (priority) {
         "Medium" -> 1
         "Important" -> 2
         "Very Important" -> 3
         "Urgent" -> 4
-        else -> 0  // Low
+        else -> 0  // Low priority
     }
 }
 
+// Convert integer value to corresponding priority string
 fun intToPriority(value: Int): String {
     return when (value) {
         1 -> "Medium"
@@ -48,15 +52,13 @@ fun intToPriority(value: Int): String {
     }
 }
 
-
-
-
+// Format a timestamp to a readable date string
 fun formatDate(timestamp: Long): String {
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
 }
 
-
+// Show a date picker dialog and return the selected date as a string
 fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
     val calendar = Calendar.getInstance()
     val year = calendar.get(Calendar.YEAR)
@@ -73,6 +75,7 @@ fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
     datePickerDialog.show()
 }
 
+// Show a date and time picker dialog and return the selected date and time as a timestamp
 fun showDateTimePicker(context: Context, onDateTimeSelected: (Long) -> Unit) {
     val calendar = Calendar.getInstance()
     val year = calendar.get(Calendar.YEAR)
@@ -88,4 +91,3 @@ fun showDateTimePicker(context: Context, onDateTimeSelected: (Long) -> Unit) {
         }, hour, minute, true).show()
     }, year, month, day).show()
 }
-

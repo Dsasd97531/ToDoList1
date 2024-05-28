@@ -1,5 +1,6 @@
 package com.todolist.model
 
+// Enum class representing different task tags with display names
 enum class TaskTag(val displayName: String) {
     Work("Work"),
     Family("Family"),
@@ -7,8 +8,10 @@ enum class TaskTag(val displayName: String) {
     Education("Education");
 
     companion object {
+        // Function to get a TaskTag enum value from a display name
         fun fromDisplayName(displayName: String): TaskTag {
-            return values().find { it.displayName == displayName } ?: Work // Возвращает 'Work' как значение по умолчанию
+            // Returns the matching TaskTag or 'Work' as the default value
+            return values().find { it.displayName == displayName } ?: Work
         }
     }
 }

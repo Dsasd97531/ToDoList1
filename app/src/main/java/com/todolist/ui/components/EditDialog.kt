@@ -36,17 +36,22 @@ fun EditDialog(
     initialIsDone: Boolean,
     newTaskPriority: MutableState<String>,
     taskRepository: TaskRepository,
-    taskViewModel: TaskViewModel,  // Добавляем TaskViewModel
+    taskViewModel: TaskViewModel,  // Added TaskViewModel
     initialIsStarred: Boolean,
     coroutineScope: CoroutineScope = rememberCoroutineScope()
 ) {
+    // Local context for accessing resources
     val context = LocalContext.current
+
+    // State to manage the starred status of the task
     var isStarred by remember { mutableStateOf(initialIsStarred) }
+    // State to manage the dropdown menu expansion
     var expanded by remember { mutableStateOf(false) }
+    // State to manage the done status of the task
     var isDone by remember { mutableStateOf(initialIsDone) }
 
     AlertDialog(
-        onDismissRequest = { showDialog.value = false },
+        onDismissRequest = { showDialog.value = false }, // Close dialog on dismiss request
         title = {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -56,7 +61,7 @@ fun EditDialog(
                 Text("Edit Task")
                 IconButton(
                     onClick = {
-                        isStarred = !isStarred
+                        isStarred = !isStarred // Toggle the starred status
                     },
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
@@ -72,32 +77,33 @@ fun EditDialog(
             Column {
                 TextField(
                     value = newTaskTitle.value,
-                    onValueChange = { newTaskTitle.value = it },
+                    onValueChange = { newTaskTitle.value = it }, // Update task title state
                     label = { Text("Task Title") }
                 )
                 TextField(
                     value = newTaskDescription.value,
-                    onValueChange = { newTaskDescription.value = it },
+                    onValueChange = { newTaskDescription.value = it }, // Update task description state
                     label = { Text("Task Description") }
                 )
                 Button(onClick = { showDateTimePicker(context) { timestamp -> newTaskDate.value = timestamp } }) {
                     Text("Select Date and Time")
                 }
                 newTaskDate.value?.let {
-                    Text("Selected Date and Time: ${formatDate(it)}")
+                    Text("Selected Date and Time: ${formatDate(it)}") // Display selected date and time
                 }
                 Button(onClick = { expanded = true }) {
                     Text("Select Tag: ${newTaskTags.value.displayName}")
                     Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
                 }
                 if (expanded) {
+                    // Popup for selecting a tag
                     Popup(alignment = Alignment.Center) {
                         Column(modifier = Modifier.background(Color.White).padding(8.dp)) {
                             TaskTag.values().forEach { tag ->
                                 TextButton(
                                     onClick = {
-                                        newTaskTags.value = tag
-                                        expanded = false
+                                        newTaskTags.value = tag // Update selected tag
+                                        expanded = false // Close the dropdown
                                     }
                                 ) {
                                     Text(tag.displayName)
@@ -108,16 +114,17 @@ fun EditDialog(
                 }
                 Slider(
                     value = priorityToFloat(newTaskPriority.value),
-                    onValueChange = { value -> newTaskPriority.value = floatToPriority(value) },
+                    onValueChange = { value -> newTaskPriority.value = floatToPriority(value) }, // Update task priority state
                     valueRange = 0f..4f,
                     steps = 4,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("Priority: ${newTaskPriority.value}")
+                Text("Priority: ${newTaskPriority.value}") // Display current priority
             }
         },
         confirmButton = {
             Button(onClick = {
+                // Check if the task details are valid before updating
                 if (newTaskTitle.value.isNotEmpty() && newTaskDescription.value.isNotEmpty() && newTaskDate.value != null) {
                     val updatedTask = task.copy(
                         title = newTaskTitle.value,
@@ -129,10 +136,10 @@ fun EditDialog(
                         isDone = isDone
                     )
                     coroutineScope.launch {
-                        taskRepository.updateTask(updatedTask)
-                        taskViewModel.loadTasks()  // Обновляем задачи после редактирования
+                        taskRepository.updateTask(updatedTask) // Update the task in the repository
+                        taskViewModel.loadTasks() // Reload tasks in the view model
                     }
-                    showDialog.value = false
+                    showDialog.value = false // Close the dialog
                 }
             }) {
                 Text("OK")
@@ -140,4 +147,3 @@ fun EditDialog(
         }
     )
 }
-

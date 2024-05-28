@@ -30,27 +30,27 @@ fun TaskTagDropdown(
     onTagSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val tags = listOf("All") + TaskTag.values().map { it.displayName }
+    var expanded by remember { mutableStateOf(false) } // State to manage the dropdown expansion
+    val tags = listOf("All") + TaskTag.values().map { it.displayName } // List of tags including "All"
 
     Box(modifier = modifier) {
         Button(
-            onClick = { expanded = !expanded },
+            onClick = { expanded = !expanded }, // Toggle the dropdown expansion
             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
         ) {
-            Text(text = selectedTag, color = Color.White)
+            Text(text = selectedTag, color = Color.White) // Display the selected tag
         }
         DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
+            expanded = expanded, // Show the dropdown menu when expanded is true
+            onDismissRequest = { expanded = false }, // Close the dropdown menu when dismissed
             modifier = Modifier.background(Color.White)
         ) {
             tags.forEach { tag ->
                 DropdownMenuItem(
                     text = { Text(tag) },
                     onClick = {
-                        onTagSelected(tag)
-                        expanded = false
+                        onTagSelected(tag) // Notify the selected tag
+                        expanded = false // Close the dropdown menu
                     }
                 )
             }
@@ -58,7 +58,7 @@ fun TaskTagDropdown(
     }
 }
 
-
 fun filterTasksByTag(tasks: List<Task>, tag: String): List<Task> {
+    // Filter tasks by tag, if "All" is selected, return all tasks
     return if (tag == "All") tasks else tasks.filter { it.tags.contains(tag) }
 }

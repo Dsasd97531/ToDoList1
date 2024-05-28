@@ -21,10 +21,12 @@ fun SortDialog(
     sortAscending: MutableState<Boolean>,
     onSortOptionSelected: (String, Boolean) -> Unit
 ) {
+    // List of available sort options
     val options = listOf("Priority", "Date")
+
     AlertDialog(
-        onDismissRequest = { showDialog.value = false },
-        title = { Text("Sort Tasks") },
+        onDismissRequest = { showDialog.value = false }, // Close dialog on dismiss request
+        title = { Text("Sort Tasks") }, // Title of the dialog
         text = {
             Column {
                 options.forEach { option ->
@@ -34,21 +36,21 @@ fun SortDialog(
                     ) {
                         Button(
                             onClick = {
-                                sortOption.value = option
-                                sortAscending.value = true
-                                showDialog.value = false
-                                onSortOptionSelected(option, true)
+                                sortOption.value = option // Set selected sort option
+                                sortAscending.value = true // Set sort order to ascending
+                                showDialog.value = false // Close the dialog
+                                onSortOptionSelected(option, true) // Notify the selected option and order
                             }
                         ) {
                             Text("$option Ascending")
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp)) // Add space between buttons
                         Button(
                             onClick = {
-                                sortOption.value = option
-                                sortAscending.value = false
-                                showDialog.value = false
-                                onSortOptionSelected(option, false)
+                                sortOption.value = option // Set selected sort option
+                                sortAscending.value = false // Set sort order to descending
+                                showDialog.value = false // Close the dialog
+                                onSortOptionSelected(option, false) // Notify the selected option and order
                             }
                         ) {
                             Text("$option Descending")
@@ -59,7 +61,7 @@ fun SortDialog(
         },
         confirmButton = {
             Button(onClick = { showDialog.value = false }) {
-                Text("Close")
+                Text("Close") // Button to close the dialog
             }
         }
     )

@@ -4,6 +4,12 @@
 
 This is a To-Do List application built using Kotlin and Jetpack Compose. It provides functionalities to create, update, delete, and manage tasks with different priorities and tags. The application also includes features like notifications for task reminders, sorting and filtering tasks, and a responsive UI that adapts to different screen sizes.
 
+## How to run
+You need to create a local.properties file and define the path to your SDK
+example:
+**sdk.dir=C\:\\Users\\YourUserName\\AppData\\Local\\Android\\Sdk**
+
+
 ## Architecture
 
 The application follows the MVVM (Model-View-ViewModel) architecture pattern:
@@ -56,6 +62,11 @@ The application icludes UI tests for all components and basic interactions
 ## Przegląd
 
 To jest aplikacja Lista Zadań napisana w Kotlinie przy użyciu Jetpack Compose. Zapewnia funkcje tworzenia, aktualizowania, usuwania i zarządzania zadaniami o różnych priorytetach i tagach. Aplikacja obejmuje również funkcje takie jak powiadomienia o przypomnieniach o zadaniach, sortowanie i filtrowanie zadań oraz responsywny interfejs użytkownika, który dostosowuje się do różnych rozmiarów ekranu.
+
+## Jak odpalić
+Musisz stworzyc plik local.properties i zdefiniować ścieżkę do swojego SDK
+przykład:
+**sdk.dir=C\:\\Users\\YourUserName\\AppData\\Local\\Android\\Sdk**
 
 ## Architektura
 
